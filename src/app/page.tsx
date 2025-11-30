@@ -6,6 +6,7 @@ import PromoBanner from "../components/HeroBanner"
 import SearchForm from "../components/SearchForm"
 import BrandScroller from "../components/BrandScroller"
 import AuthWizard from "../components/AuthWizard"
+import WhyChooseUs from "../components/WhyChooseUs";
 import Footer from "../components/Footer"
 
 export default function LandingPage() {
@@ -17,6 +18,7 @@ export default function LandingPage() {
       <PromoBanner />
       <SearchForm />
       <BrandScroller />
+      <WhyChooseUs />
       <Footer />
       {showAuth && <AuthWizard type={showAuth} onClose={() => setShowAuth(null)} />}
     </div>
