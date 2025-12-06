@@ -14,26 +14,26 @@ export default function PromoBanner() {
       {/* Content box */}
       <div className="relative z-10 px-6 py-8 bg-white/20 backdrop-blur-md rounded-2xl shadow-xl max-w-2xl mx-auto">
         
-        <h1 className="text-4xl md:text-6xl font-extrabold text-green-700 drop-shadow-md">
+        <h1 className="text-4xl md:text-6xl font-extrabold text-white-700 drop-shadow-md">
           BLACK FRIDAY
         </h1>
 
-        <p className="text-lg md:text-xl text-green-800 font-medium mt-3">
+        <p className="text-lg md:text-xl text-white-800 font-medium mt-3">
           Deals end in 6 days
         </p>
 
-        <p className="text-md md:text-lg text-green-800 font-semibold mt-1">
-          Hit the road with up to <span className="text-green-700">25% off</span> car rental
+        <p className="text-md md:text-lg text-white-800 font-semibold mt-1">
+          Hit the road with up to <span className="text-green-100">25% off</span> car rental
         </p>
 
-        <p className="text-sm text-green-700 mt-3">
+        <p className="text-sm text-white-700 mt-3">
           Book until 3 Dec 2025 — Drive until the end of 2026
         </p>
 
         {/* CTA Button */}
         <div className="mt-6">
           <a
-            href="#search"
+            href="/car-deals"
             className="inline-block px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl shadow-md transition-all duration-300 hover:scale-105"
           >
             Search Deals
