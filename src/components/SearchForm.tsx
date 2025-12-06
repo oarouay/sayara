@@ -1,9 +1,11 @@
 "use client"
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { MapPin, Calendar, Clock } from 'lucide-react';
 
 export default function SearchForm() {
+  const router = useRouter();
   const [pickupLocation, setPickupLocation] = useState('');
   const [pickupDate, setPickupDate] = useState('');
   const [pickupTime, setPickupTime] = useState('');
@@ -11,7 +13,17 @@ export default function SearchForm() {
   const [returnTime, setReturnTime] = useState('');
 
   const handleSearch = () => {
-    console.log({ pickupLocation, pickupDate, pickupTime, returnDate, returnTime });
+    // Build query string with search parameters
+    const params = new URLSearchParams();
+    if (pickupLocation) params.append('location', pickupLocation);
+    if (pickupDate) params.append('pickupDate', pickupDate);
+    if (pickupTime) params.append('pickupTime', pickupTime);
+    if (returnDate) params.append('returnDate', returnDate);
+    if (returnTime) params.append('returnTime', returnTime);
+
+    // Navigate to car-deals page with search parameters
+    const queryString = params.toString();
+    router.push(`/car-deals${queryString ? '?' + queryString : ''}`);
   };
 
   return (
@@ -113,7 +125,7 @@ export default function SearchForm() {
           <button 
             onClick={handleSearch}
             className="w-full lg:w-auto bg-green-600 text-white px-8 py-3 rounded-md 
-                     hover:bg-blue-700 transition-colors font-semibold flex items-center 
+                     hover:bg-green-700 transition-colors font-semibold flex items-center 
                      justify-center gap-2 min-w-[120px]"
           >
             Search

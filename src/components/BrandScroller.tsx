@@ -1,4 +1,6 @@
 
+'use client';
+
 export default function BrandScroller() {
   const brands = [
     { name: "Toyota", logo: "/data/toyota.svg" },
@@ -10,6 +12,7 @@ export default function BrandScroller() {
     { name: "Renault", logo: "/data/Renault.svg" },
     { name: "Kia", logo: "/data/kia.svg" },
     { name: "Hyundai", logo: "/data/hyundai.svg" },
+    { name: "Volkswagen", logo: "/data/vw.svg" },
   ];
 
   // Duplicate array for seamless infinite loop
@@ -21,14 +24,31 @@ export default function BrandScroller() {
           Our <span className="text-green-600">Trusted</span> Partners
         </h2>
 
+      <style>{`
+        @keyframes scroll {
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(calc(-1 * 160px * ${brands.length} - 1 * 40px * ${brands.length}));
+          }
+        }
+        
+        .brand-scroll {
+          animation: scroll 30s linear infinite;
+        }
+      `}</style>
 
       <div className="relative w-full overflow-hidden">
         {/* Scrolling container */}
-        <div className="flex gap-10 brand-scroll-animation hover:[animation-play-state:paused]">
+        <div
+          className="flex gap-10 brand-scroll"
+          style={{ scrollBehavior: 'auto' }}
+        >
           {scrollBrands.map((brand, idx) => (
             <div
               key={`${brand.name}-${idx}`}
-              className="min-w-[160px] flex flex-col items-center justify-center"
+              className="min-w-[160px] flex flex-col items-center justify-center flex-shrink-0"
             >
               <div className="w-20 h-20 flex items-center justify-center">
                 <img
@@ -44,21 +64,6 @@ export default function BrandScroller() {
           ))}
         </div>
       </div>
-
-      {/* Animation style - moved to global CSS to avoid hydration issues */}
-      <style jsx global>{`
-        .brand-scroll-animation {
-          animation: brand-scroll 18s linear infinite;
-        }
-        @keyframes brand-scroll {
-          0% {
-            transform: translateX(0);
-          }
-          100% {
-            transform: translateX(-50%);
-          }
-        }
-      `}</style>
     </section>
   );
 }
