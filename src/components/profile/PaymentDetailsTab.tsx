@@ -6,15 +6,17 @@ import React, { useState } from 'react';
 import { detectCardBrand } from './cardBrands';
 import CardIcon from '../CardIcon';
 
+interface PaymentDetails {
+  cardHolder: string;
+  cardNumber: string;
+  expiryDate: string;
+  cvv: string;
+  billingAddress: string;
+}
+
 interface PaymentDetailsTabProps {
-  paymentDetails: {
-    cardHolder: string;
-    cardNumber: string;
-    expiryDate: string;
-    cvv: string;
-    billingAddress: string;
-  };
-  setPaymentDetails: (details: any) => void;
+  paymentDetails: PaymentDetails;
+  setPaymentDetails: (details: PaymentDetails) => void;
 }
 
 const PaymentDetailsTab: React.FC<PaymentDetailsTabProps> = ({
