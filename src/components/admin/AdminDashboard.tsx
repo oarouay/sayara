@@ -8,8 +8,9 @@ import AdminUsersTab from './AdminUsersTab'
 import AdminBookingsTab from './AdminBookingsTab'
 import AdminDocsTab from './AdminDocsTab'
 import AdminSupportTab from './AdminSupportTab'
+import AdminCarsTab from './AdminCarsTab'
 
-type Tab = 'users' | 'bookings' | 'documents' | 'support'
+type Tab = 'users' | 'cars' | 'bookings' | 'documents' | 'support'
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<Tab>('users')
@@ -31,6 +32,9 @@ export default function AdminDashboard() {
                   <button onClick={() => setActiveTab('users')} className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${activeTab === 'users' ? 'bg-gradient-to-r from-green-600 to-green-500 text-white shadow-lg shadow-green-500/30 scale-105' : 'bg-white text-gray-700 hover:bg-gray-50 hover:shadow-md hover:scale-105 border border-gray-200'}`}>
                     Users
                   </button>
+                  <button onClick={() => setActiveTab('cars')} className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${activeTab === 'cars' ? 'bg-gradient-to-r from-green-600 to-green-500 text-white shadow-lg shadow-green-500/30 scale-105' : 'bg-white text-gray-700 hover:bg-gray-50 hover:shadow-md hover:scale-105 border border-gray-200'}`}>
+                    Cars
+                  </button>
                   <button onClick={() => setActiveTab('bookings')} className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${activeTab === 'bookings' ? 'bg-gradient-to-r from-green-600 to-green-500 text-white shadow-lg shadow-green-500/30 scale-105' : 'bg-white text-gray-700 hover:bg-gray-50 hover:shadow-md hover:scale-105 border border-gray-200'}`}>
                     Bookings
                   </button>
@@ -40,6 +44,7 @@ export default function AdminDashboard() {
                   <button onClick={() => setActiveTab('support')} className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${activeTab === 'support' ? 'bg-gradient-to-r from-green-600 to-green-500 text-white shadow-lg shadow-green-500/30 scale-105' : 'bg-white text-gray-700 hover:bg-gray-50 hover:shadow-md hover:scale-105 border border-gray-200'}`}>
                     Support
                   </button>
+                
                 </div>
               </div>
             </div>
@@ -52,6 +57,7 @@ export default function AdminDashboard() {
             {activeTab === 'bookings' && <AdminBookingsTab />}
             {activeTab === 'documents' && <AdminDocsTab />}
             {activeTab === 'support' && <AdminSupportTab />}
+            {activeTab === 'cars' && <AdminCarsTab />}
           </div>
         </div>
       </main>

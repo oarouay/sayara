@@ -15,10 +15,26 @@ type User = {
   createdAt: string
 }
 
+type Doc = {
+  id: string
+  userId: string
+  userName: string
+  type: 'license' | 'nationalId'
+  url: string | null
+  verified: boolean
+}
+
 export default function AdminUsersTab() {
   const [users, setUsers] = useState<User[]>([
     { id: 'u1', name: 'John Doe', email: 'john.doe@example.com', phone: '+123456789', address: '123 Main St', city: 'New York', country: 'USA', licenseNumber: 'DL12345', verified: true, createdAt: '2025-01-01' },
     { id: 'u2', name: 'Jane Smith', email: 'jane.smith@example.com', phone: '+198765432', address: '456 Oak Ave', city: 'Los Angeles', country: 'USA', licenseNumber: 'DL67890', verified: false, createdAt: '2025-02-12' },
+  ])
+
+  const [docs, setDocs] = useState<Doc[]>([
+    { id: 'd1', userId: 'u1', userName: 'John Doe', type: 'license', url: '/data/sample-license.png', verified: true },
+    { id: 'd2', userId: 'u1', userName: 'John Doe', type: 'nationalId', url: '/data/sample-id.png', verified: false },
+    { id: 'd3', userId: 'u2', userName: 'Jane Smith', type: 'license', url: '/data/sample-license.png', verified: false },
+    { id: 'd4', userId: 'u2', userName: 'Jane Smith', type: 'nationalId', url: '/data/sample-id.png', verified: false },
   ])
 
   const [showModal, setShowModal] = useState(false)
@@ -97,13 +113,17 @@ export default function AdminUsersTab() {
     setUsers(prev => prev.map(u => u.id === id ? { ...u, verified: !u.verified } : u))
   }
 
+  const getDocStatus = (userId: string, type: 'license' | 'nationalId') => {
+    const doc = docs.find(d => d.userId === userId && d.type === type)
+    if (!doc) return { status: 'Pending', verified: false }
+    return { status: doc.verified ? 'Confirmed' : 'Pending', verified: doc.verified }
+  }
+
   return (
     <div className="w-full">
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-2xl font-semibold text-gray-900">Users</h3>
-        <div className="flex gap-2">
-          <button onClick={startCreate} className="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-md shadow-sm hover:shadow-md transition-shadow">New User</button>
-        </div>
+        <button onClick={startCreate} className="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-md shadow-sm hover:shadow-md transition-shadow">New User</button>
       </div>
 
       <div className="bg-white border border-gray-200 rounded-lg shadow-md overflow-auto">
@@ -116,39 +136,53 @@ export default function AdminUsersTab() {
               <th className="py-4 px-4">Address</th>
               <th className="py-4 px-4">City</th>
               <th className="py-4 px-4">Country</th>
-              <th className="py-4 px-4">License #</th>
+              <th className="py-4 px-4">License</th>
+              <th className="py-4 px-4">National ID</th>
               <th className="py-4 px-4">Verified</th>
               <th className="py-4 px-4">Created</th>
               <th className="py-4 px-4">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {users.map(u => (
-              <tr key={u.id} className="hover:bg-green-50">
-                <td className="py-4 px-4 text-gray-900 font-medium">{u.name}</td>
-                <td className="py-4 px-4 text-gray-900">{u.email}</td>
-                <td className="py-4 px-4 text-gray-900">{u.phone || '—'}</td>
-                <td className="py-4 px-4 text-gray-900">{u.address || '—'}</td>
-                <td className="py-4 px-4 text-gray-900">{u.city || '—'}</td>
-                <td className="py-4 px-4 text-gray-900">{u.country || '—'}</td>
-                <td className="py-4 px-4 text-gray-900">{u.licenseNumber || '—'}</td>
-                <td className="py-3 px-4">
-                  <button 
-                    onClick={() => toggleVerified(u.id)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium ${u.verified ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}
-                  >
-                    {u.verified ? 'Verified' : 'Pending'}
-                  </button>
-                </td>
-                <td className="py-4 px-4 text-gray-900">{u.createdAt}</td>
-                <td className="py-3 px-4">
-                  <div className="flex gap-2">
-                    <button onClick={() => startEdit(u)} className="text-sm px-3 py-1 bg-white border text-green-700 rounded-md hover:bg-green-50">Edit</button>
-                    <button onClick={() => remove(u.id)} className="text-sm px-3 py-1 bg-red-50 text-red-700 rounded-md hover:bg-red-100">Delete</button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {users.map(u => {
+              const licenseStatus = getDocStatus(u.id, 'license')
+              const idStatus = getDocStatus(u.id, 'nationalId')
+              return (
+                <tr key={u.id} className="hover:bg-green-50">
+                  <td className="py-4 px-4 text-gray-900 font-medium">{u.name}</td>
+                  <td className="py-4 px-4 text-gray-900">{u.email}</td>
+                  <td className="py-4 px-4 text-gray-900">{u.phone || '—'}</td>
+                  <td className="py-4 px-4 text-gray-900">{u.address || '—'}</td>
+                  <td className="py-4 px-4 text-gray-900">{u.city || '—'}</td>
+                  <td className="py-4 px-4 text-gray-900">{u.country || '—'}</td>
+                  <td className="py-3 px-4">
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${licenseStatus.verified ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                      {licenseStatus.status}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4">
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${idStatus.verified ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                      {idStatus.status}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4">
+                    <button 
+                      onClick={() => toggleVerified(u.id)}
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${u.verified ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}
+                    >
+                      {u.verified ? 'Verified' : 'Pending'}
+                    </button>
+                  </td>
+                  <td className="py-4 px-4 text-gray-900">{u.createdAt}</td>
+                  <td className="py-3 px-4">
+                    <div className="flex gap-2">
+                      <button onClick={() => startEdit(u)} className="text-sm px-3 py-1 bg-white border text-green-700 rounded-md hover:bg-green-50">Edit</button>
+                      <button onClick={() => remove(u.id)} className="text-sm px-3 py-1 bg-red-50 text-red-700 rounded-md hover:bg-red-100">Delete</button>
+                    </div>
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>

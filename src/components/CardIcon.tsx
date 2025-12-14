@@ -10,7 +10,7 @@ const ICON_URLS: Record<string, string> = {
   unionpay: 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/unionpay.svg',
   jcb: 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/jcb.svg',
   diners: 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/dinersclub.svg',
-  generic: 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/creditcard.svg',
+  westernunion: 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/westernunion.svg',
 };
 
 interface CardIconProps {
@@ -19,7 +19,7 @@ interface CardIconProps {
 }
 
 const CardIcon: React.FC<CardIconProps> = ({ brand, className }) => {
-  const url = ICON_URLS[brand] || ICON_URLS['generic'];
+  const url = ICON_URLS[brand.toLowerCase()] || ICON_URLS.generic;
 
   return (
     <img

@@ -13,6 +13,7 @@ type Car = {
   image: string
   monthly: number
   mileage: number
+  insuranceCost: number
 }
 
 const cars: Car[] = [
@@ -22,6 +23,7 @@ const cars: Car[] = [
     image: "https://images.unsplash.com/photo-1605557623739-1f9f3f3e9f3a",
     monthly: 289,
     mileage: 25000,
+    insuranceCost: 150,
   },
   {
     id: 2,
@@ -29,6 +31,7 @@ const cars: Car[] = [
     image: "https://images.unsplash.com/photo-1617814077082-9d2e3f3a9f3a",
     monthly: 399,
     mileage: 15000,
+    insuranceCost: 150,
   },
   {
     id: 3,
@@ -36,6 +39,7 @@ const cars: Car[] = [
     image: "https://images.unsplash.com/photo-1620057633739-1f9f3f3e9f3a",
     monthly: 429,
     mileage: 12000,
+    insuranceCost: 150,
   },
   {
     id: 4,
@@ -43,6 +47,7 @@ const cars: Car[] = [
     image: "https://images.unsplash.com/photo-1605557623739-1f9f3f3e9f3a",
     monthly: 499,
     mileage: 8000,
+    insuranceCost: 150,
   },
 ]
 
@@ -87,6 +92,12 @@ export default function CarDealsPage() {
                   </span>{" "}
                   <span className="ml-2 text-sm text-gray-500">
                     {car.mileage.toLocaleString()} km
+                  </span>
+                </p>
+                <p className="mt-1 text-gray-600 text-sm">
+                  Insurance:{" "}
+                  <span className="font-semibold text-green-600">
+                    ${car.insuranceCost}/month
                   </span>
                 </p>
 

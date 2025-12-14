@@ -39,7 +39,6 @@ export default function Footer() {
             <li><a href="#" className="hover:text-white">About Us</a></li>
             <li><a href="#" className="hover:text-white">Terms & Conditions</a></li>
             <li><a href="#" className="hover:text-white">Privacy Policy</a></li>
-            <li><a href="#" className="hover:text-white">Cookie Policy</a></li>
           </ul>
         </div>
 

@@ -38,6 +38,13 @@ export const CARD_BRANDS = [
     pattern: /^(36|38|30[0-5])[0-9]*$/,
     gradient: 'from-amber-600 to-amber-800',
   },
+
+  // ✅ Western Union (default / fallback)
+  {
+    name: 'westernunion',
+    pattern: /.*/, // matches anything not caught above
+    gradient: 'from-yellow-500 to-yellow-700',
+  },
 ];
 
 export const detectCardBrand = (cardNumber: string) => {
@@ -49,5 +56,6 @@ export const detectCardBrand = (cardNumber: string) => {
     }
   }
 
-  return { brand: 'generic', bgGradient: 'from-gray-600 to-gray-800' };
+  // This should never be hit now, but kept for safety
+  return { brand: 'westernunion', bgGradient: 'from-yellow-500 to-yellow-700' };
 };
