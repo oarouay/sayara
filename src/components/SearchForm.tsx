@@ -13,10 +13,10 @@ export default function SearchForm() {
   const [maxPrice, setMaxPrice] = useState(1500);
 
   // Car makers from your database
-  const makers = ['Toyota', 'BMW', 'Mercedes', 'Ford', 'Hyundai', 'KIA', 'Audi', 'Renault', 'VW'];
+  const makers = ['Toyota', 'BMW', 'Mercedes', 'Ford', 'Hyundai', 'KIA', 'Audi', 'Renault', 'VW' , 'Honda', 'Nissan', 'Peugeot', 'Subaru', 'Chevrolet', 'Jeep', 'Mazda'];
   
   // Car types
-  const carTypes = ['Sedan', 'SUV', 'Coupe', 'Hatchback', 'Sports Car'];
+  const carTypes = ['Sedan', 'SUV', 'Coupe', 'Hatchback', 'Sports Car' , 'Convertible', 'Wagon', 'Pickup Truck'];
 
   const handleSearch = () => {
     const params = new URLSearchParams();

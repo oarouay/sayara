@@ -19,6 +19,8 @@ export default function BrandScroller() {
     { name: "Subaru", logo: "/data/subaru.svg" },
     { name: "Chevrolet", logo: "/data/chevrolet.svg" },
     { name: "Jeep", logo: "/data/jeep.svg" },
+    { name: "Mazda", logo: "/data/mazda.svg" },
+
     
   ];
 
