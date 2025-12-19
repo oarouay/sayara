@@ -13,6 +13,13 @@ export default function BrandScroller() {
     { name: "Kia", logo: "/data/kia.svg" },
     { name: "Hyundai", logo: "/data/hyundai.svg" },
     { name: "Volkswagen", logo: "/data/vw.svg" },
+    { name: "Honda", logo: "/data/honda.svg" },
+    { name: "Nissan", logo: "/data/nissan.svg" },
+    { name: "Peugeot", logo: "/data/peugeot.svg" },
+    { name: "Subaru", logo: "/data/subaru.svg" },
+    { name: "Chevrolet", logo: "/data/chevrolet.svg" },
+    { name: "Jeep", logo: "/data/jeep.svg" },
+    
   ];
 
   // Duplicate array for seamless infinite loop
