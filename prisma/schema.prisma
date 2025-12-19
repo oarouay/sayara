@@ -5,10 +5,97 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+ }
+
+/* ===================== ENUMS ===================== */
+enum ROLE {
+  ADMIN
+  USER
+}
+
+enum PAYMTH {
+  CASH
+  CARD
+  ONLINE
+}
+
+enum PAYSTAT {
+  PENDING
+  PAID
+  FAILED
+}
+
+enum RENTAL_STATUS {
+  ACTIVE
+  COMPLETED
+  PENDING
+  CANCELLED
+}
+
+
+/* ===================== MODELS ===================== */
+
+model User {
+  id                   String   @id @default(auto()) @map("_id") @db.ObjectId
+  name                 String
+  email                String   @unique
+  password             String
+  phone                String
+  nationality          String
+  dateOfBirth          DateTime
+  address              String
+  role                 ROLE     @default(USER)
+
+  driverLicenseNumber  String?
+  driverLicenseVerified Boolean @default(false)
+
+  idDocumentNumber     String?
+  idDocumentVerified   Boolean @default(false)
+
+  payments             Payment[]
+  rentals              Rental[]
+
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+
+model Payment {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  paymentDate    DateTime @default(now())
+  amount         Float
+  paymentMethod  PAYMTH
+  status         PAYSTAT  @default(PENDING)
+
+  userId         String   @db.ObjectId
+  user           User     @relation(fields: [userId], references: [id])
+
+  createdAt      DateTime @default(now())
+  cardLast4      String?
+  cardBrand      String?
+}
+
+model Rental {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  carModel        String
+  licensePlate    String
+  pickupLocation  String
+  dropoffLocation String
+  rentalDate      DateTime
+  returnDate      DateTime
+  dailyRate       Float
+  totalCost       Float
+  insurance       Boolean  @default(false)
+  status          RENTAL_STATUS
+
+  userId          String   @db.ObjectId
+  user            User     @relation(fields: [userId], references: [id])
+
+  createdAt       DateTime @default(now())
 }

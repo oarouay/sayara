@@ -2,25 +2,40 @@
 
 import React, { useState } from 'react';
 
-interface UserDetailsTabProps {
-  userProfile: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone: string;
-    dateOfBirth: string;
-    address: string;
-    city: string;
-    country: string;
-    licenseNumber: string;
-    nationalId: string;
-  };
-  setUserProfile: (profile: any) => void;
+/* -------------------------------------------------------
+   ✅ Strong type for user profile
+------------------------------------------------------- */
+export interface UserProfile {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  dateOfBirth: string;
+  address: string;
+  city: string;
+  country: string;
+  licenseNumber: string;
+  nationalId: string;
 }
 
-const UserDetailsTab: React.FC<UserDetailsTabProps> = ({ userProfile, setUserProfile }) => {
+/* -------------------------------------------------------
+   ✅ Strong props type (no any)
+------------------------------------------------------- */
+interface UserDetailsTabProps {
+  userProfile: UserProfile
+  setUserProfile?: React.Dispatch<React.SetStateAction<UserProfile>>
+}
+
+
+/* -------------------------------------------------------
+   ✅ Component
+------------------------------------------------------- */
+const UserDetailsTab: React.FC<UserDetailsTabProps> = ({
+  userProfile,
+  setUserProfile
+}) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState(userProfile);
+  const [formData, setFormData] = useState<UserProfile>(userProfile);
   const [successMessage, setSuccessMessage] = useState('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -29,7 +44,7 @@ const UserDetailsTab: React.FC<UserDetailsTabProps> = ({ userProfile, setUserPro
   };
 
   const handleSave = () => {
-    setUserProfile(formData);
+    setUserProfile?.(formData);
     setIsEditing(false);
     setSuccessMessage('Profile updated successfully!');
     setTimeout(() => setSuccessMessage(''), 3000);
@@ -70,7 +85,7 @@ const UserDetailsTab: React.FC<UserDetailsTabProps> = ({ userProfile, setUserPro
               name="firstName"
               value={formData.firstName}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-black"
+              className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 text-black"
             />
           ) : (
             <p className="text-gray-900 font-medium">{userProfile.firstName}</p>
@@ -86,7 +101,7 @@ const UserDetailsTab: React.FC<UserDetailsTabProps> = ({ userProfile, setUserPro
               name="lastName"
               value={formData.lastName}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-black"
+              className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 text-black"
             />
           ) : (
             <p className="text-gray-900 font-medium">{userProfile.lastName}</p>
@@ -102,7 +117,7 @@ const UserDetailsTab: React.FC<UserDetailsTabProps> = ({ userProfile, setUserPro
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-black"
+              className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 text-black"
             />
           ) : (
             <p className="text-gray-900 font-medium">{userProfile.email}</p>
@@ -118,7 +133,7 @@ const UserDetailsTab: React.FC<UserDetailsTabProps> = ({ userProfile, setUserPro
               name="phone"
               value={formData.phone}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-black"
+              className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 text-black"
             />
           ) : (
             <p className="text-gray-900 font-medium">{userProfile.phone}</p>
@@ -134,7 +149,7 @@ const UserDetailsTab: React.FC<UserDetailsTabProps> = ({ userProfile, setUserPro
               name="dateOfBirth"
               value={formData.dateOfBirth}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-black"
+              className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 text-black"
             />
           ) : (
             <p className="text-gray-900 font-medium">{userProfile.dateOfBirth}</p>
@@ -150,7 +165,7 @@ const UserDetailsTab: React.FC<UserDetailsTabProps> = ({ userProfile, setUserPro
               name="licenseNumber"
               value={formData.licenseNumber}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-black"
+              className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 text-black"
             />
           ) : (
             <p className="text-gray-900 font-medium">{userProfile.licenseNumber}</p>
@@ -166,7 +181,7 @@ const UserDetailsTab: React.FC<UserDetailsTabProps> = ({ userProfile, setUserPro
               name="nationalId"
               value={formData.nationalId}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-black"
+              className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 text-black"
             />
           ) : (
             <p className="text-gray-900 font-medium">{userProfile.nationalId}</p>
@@ -182,7 +197,7 @@ const UserDetailsTab: React.FC<UserDetailsTabProps> = ({ userProfile, setUserPro
               name="address"
               value={formData.address}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-black"
+              className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 text-black"
             />
           ) : (
             <p className="text-gray-900 font-medium">{userProfile.address}</p>
@@ -198,7 +213,7 @@ const UserDetailsTab: React.FC<UserDetailsTabProps> = ({ userProfile, setUserPro
               name="city"
               value={formData.city}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-black"
+              className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 text-black"
             />
           ) : (
             <p className="text-gray-900 font-medium">{userProfile.city}</p>
@@ -214,7 +229,7 @@ const UserDetailsTab: React.FC<UserDetailsTabProps> = ({ userProfile, setUserPro
               name="country"
               value={formData.country}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-black"
+              className="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 text-black"
             />
           ) : (
             <p className="text-gray-900 font-medium">{userProfile.country}</p>
