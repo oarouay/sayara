@@ -43,11 +43,38 @@ const UserDetailsTab: React.FC<UserDetailsTabProps> = ({
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = () => {
-    setUserProfile?.(formData);
-    setIsEditing(false);
-    setSuccessMessage('Profile updated successfully!');
-    setTimeout(() => setSuccessMessage(''), 3000);
+  const handleSave = async () => {
+    try {
+      const res = await fetch('/api/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          name: `${formData.firstName} ${formData.lastName}`,
+          email: formData.email,
+          phone: formData.phone,
+          address: formData.address,
+          nationality: formData.country,
+          dateOfBirth: formData.dateOfBirth,
+          driverLicenseNumber: formData.licenseNumber,
+          idDocumentNumber: formData.nationalId,
+        })
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        setUserProfile?.(formData)
+        setIsEditing(false)
+        setSuccessMessage('Profile updated successfully!')
+        setTimeout(() => setSuccessMessage(''), 3000)
+      } else {
+        const err = await res.json().catch(() => ({}))
+        alert(`Failed to update: ${err.message || 'Unknown error'}`)
+      }
+    } catch (error) {
+      console.error('Error saving profile:', error)
+      alert('Failed to save profile')
+    }
   };
 
   const handleCancel = () => {

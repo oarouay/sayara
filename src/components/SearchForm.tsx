@@ -1,134 +1,249 @@
 "use client"
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Calendar, DollarSign } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { DollarSign, Check } from 'lucide-react';
+import { CarMaker } from '@prisma/client';
 
-export default function SearchForm() {
+export default function SearchForm({ makers = [], types = [] }: { makers?: CarMaker[]; types?: string[] }) {
   const router = useRouter();
-  const [availability, setAvailability] = useState('all');
+  const searchParams = useSearchParams();
+  // stable string representation used for effect dependencies
+  const searchStr = searchParams?.toString() || '';
+
+  // Local safe state for available options (props may be empty)
+  const [localMakers, setLocalMakers] = useState<CarMaker[]>(makers || []);
+  const [localTypes, setLocalTypes] = useState<string[]>(types || []);
+
   const [selectedMaker, setSelectedMaker] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
+  const [selectedAvailability, setSelectedAvailability] = useState<'all' | 'AVAILABLE' | 'UNAVAILABLE'>('all');
   const [minPrice, setMinPrice] = useState(200);
   const [maxPrice, setMaxPrice] = useState(1500);
 
-  // Car makers from your database
-  const makers = ['Toyota', 'BMW', 'Mercedes', 'Ford', 'Hyundai', 'KIA', 'Audi', 'Renault', 'VW' , 'Honda', 'Nissan', 'Peugeot', 'Subaru', 'Chevrolet', 'Jeep', 'Mazda'];
-  
-  // Car types
-  const carTypes = ['Sedan', 'SUV', 'Coupe', 'Hatchback', 'Sports Car' , 'Convertible', 'Wagon', 'Pickup Truck'];
+  // bounds derived from available cars (used to set slider min/max)
+  const [minBound, setMinBound] = useState(200);
+  const [maxBound, setMaxBound] = useState(1500);
+
+  // Keep local lists in sync when props change
+  useEffect(() => {
+    // Only update local state if incoming props actually differ to avoid render loops
+    setLocalMakers(prev => {
+      const next = makers || [];
+      if (prev.length === next.length && prev.every((v, i) => v === next[i])) return prev;
+      return next;
+    });
+    setLocalTypes(prev => {
+      const next = types || [];
+      if (prev.length === next.length && prev.every((v, i) => v === next[i])) return prev;
+      return next;
+    });
+  }, [makers, types]);
+
+  // Track whether we've attempted to fetch options to avoid repeating when server returns empty arrays
+  const [fetchedOptions, setFetchedOptions] = useState(false);
+
+  // Populate options from the server when not provided by props
+  useEffect(() => {
+    const shouldFetch = (!fetchedOptions && (localMakers.length === 0 || localTypes.length === 0));
+    if (!shouldFetch) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/cars');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (cancelled) return;
+        setLocalMakers(prev => {
+          const next = data.makers || [];
+          if (prev.length === next.length && prev.every((v, i) => v === next[i])) return prev;
+          return next;
+        });
+        setLocalTypes(prev => {
+          const next = data.types || [];
+          if (prev.length === next.length && prev.every((v, i) => v === next[i])) return prev;
+          return next;
+        });
+
+        const all = data.cars || [];
+        if (all.length > 0) {
+          // We no longer update minBound/maxBound; they stay at 200-1500
+          // Just init minPrice/maxPrice from URL if not already set
+          const hasQMin = Boolean(searchParams?.get('minPrice'));
+          const hasQMax = Boolean(searchParams?.get('maxPrice'));
+          if (!hasQMin) setMinPrice(200);
+          if (!hasQMax) setMaxPrice(1500);
+        }
+      } catch (e) {
+        // ignore
+      } finally {
+        setFetchedOptions(true);
+      }
+    })();
+
+    return () => { cancelled = true };
+  }, [localMakers.length, localTypes.length, fetchedOptions, searchParams]);
+
+  useEffect(() => {
+    // Use the query-string form to avoid re-running when the searchParams object identity changes
+    const qMaker = searchParams?.get('maker') ?? 'all'
+    const qType = searchParams?.get('type') ?? 'all'
+    const qAvailability = searchParams?.get('availability') ?? 'all'
+    const qMin = Number(searchParams?.get('minPrice') ?? minBound)
+    const qMax = Number(searchParams?.get('maxPrice') ?? maxBound)
+
+    // Only update when different to avoid causing extra renders
+    setSelectedMaker(prev => prev !== qMaker ? qMaker : prev)
+    setSelectedType(prev => prev !== qType ? qType : prev)
+    setSelectedAvailability(prev => prev !== qAvailability ? qAvailability as any : prev)
+    setMinPrice(prev => prev !== qMin ? qMin : prev)
+    setMaxPrice(prev => prev !== qMax ? qMax : prev)
+  }, [searchStr, minBound, maxBound]);
+
+  // Keep prices within updated bounds
+  useEffect(() => {
+    setMinPrice(prev => Math.max(minBound, Math.min(prev, maxBound)));
+    setMaxPrice(prev => Math.max(minBound, Math.min(prev, maxBound)));
+  }, [minBound, maxBound]);
+
+  // Ensure minPrice never exceeds maxPrice
+  useEffect(() => {
+    setMaxPrice(prev => prev < minPrice ? minPrice : prev);
+  }, [minPrice]);
+
+  // Ensure maxPrice never falls below minPrice
+  useEffect(() => {
+    setMinPrice(prev => prev > maxPrice ? maxPrice : prev);
+  }, [maxPrice]);
 
   const handleSearch = () => {
     const params = new URLSearchParams();
-    if (availability && availability !== 'all') params.append('availability', availability);
     if (selectedMaker && selectedMaker !== 'all') params.append('maker', selectedMaker);
     if (selectedType && selectedType !== 'all') params.append('type', selectedType);
+    if (selectedAvailability && selectedAvailability !== 'all') params.append('availability', selectedAvailability);
     if (minPrice) params.append('minPrice', minPrice.toString());
     if (maxPrice) params.append('maxPrice', maxPrice.toString());
 
     const queryString = params.toString();
-    router.push(`/car-deals${queryString ? '?' + queryString : ''}`);
+    router.push(`/car-deals?${queryString}`);
   };
 
   return (
     <section className="bg-white shadow-lg rounded-lg p-6 max-w-7xl mx-auto -mt-10 z-10 relative">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Availability */}
-        <div>
-          <label className="block text-xs font-semibold text-gray-700 mb-2">
-            <Calendar className="inline w-4 h-4 mr-1" />
-            Availability
-          </label>
-          <select
-            value={availability}
-            onChange={(e) => setAvailability(e.target.value)}
-            className="w-full border-2 border-gray-300 px-3 py-3 rounded-md focus:outline-none focus:border-green-500 transition-colors bg-white"
-          >
-            <option value="all">All</option>
-            <option value="available">Available Now</option>
-            <option value="unavailable">Unavailable</option>
-          </select>
-        </div>
-
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Car Maker */}
-        <div>
+        <div className="flex flex-col">
           <label className="block text-xs font-semibold text-gray-700 mb-2">
             Car Maker
           </label>
           <select
             value={selectedMaker}
             onChange={(e) => setSelectedMaker(e.target.value)}
-            className="w-full border-2 border-gray-300 px-3 py-3 rounded-md focus:outline-none focus:border-green-500 transition-colors bg-white"
+            className="w-full border-2 border-gray-300 px-3 py-3 rounded-md focus:outline-none focus:border-green-500 transition-colors bg-white text-sm"
           >
             <option value="all">All Makers</option>
-            {makers.map((maker) => (
-              <option key={maker} value={maker}>
-                {maker}
-              </option>
-            ))}
+            {localMakers.length === 0 ? (
+              <option disabled>{fetchedOptions ? 'No makers available' : 'Loading makers...'}</option>
+            ) : (
+              localMakers.map((maker) => (
+                <option key={maker} value={maker}>
+                  {maker}
+                </option>
+              ))
+            )}
           </select>
         </div>
 
         {/* Car Type */}
-        <div>
+        <div className="flex flex-col">
           <label className="block text-xs font-semibold text-gray-700 mb-2">
             Car Type
           </label>
           <select
             value={selectedType}
             onChange={(e) => setSelectedType(e.target.value)}
-            className="w-full border-2 border-gray-300 px-3 py-3 rounded-md focus:outline-none focus:border-green-500 transition-colors bg-white"
+            className="w-full border-2 border-gray-300 px-3 py-3 rounded-md focus:outline-none focus:border-green-500 transition-colors bg-white text-sm"
           >
             <option value="all">All Types</option>
-            {carTypes.map((type) => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
+            {localTypes.length === 0 ? (
+              <option disabled>{fetchedOptions ? 'No types available' : 'Loading types...'}</option>
+            ) : (
+              localTypes.map((type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))
+            )}
           </select>
         </div>
 
-
-        {/* Monthly Price Range */}
-        <div>
+        {/* Availability Status */}
+        <div className="flex flex-col">
           <label className="block text-xs font-semibold text-gray-700 mb-2">
-            <DollarSign className="inline w-4 h-4 mr-1" />
-            Monthly Price
+            Availability
           </label>
-          <div className="space-y-2">
-            <div className="flex gap-2 items-center">
-              <input
-                type="number"
-                min="200"
-                max="1500"
-                value={minPrice}
-                onChange={(e) => setMinPrice(Number(e.target.value))}
-                className="w-1/2 border-2 border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:border-green-500 text-sm"
-                placeholder="Min"
-              />
-              <span className="text-gray-500">-</span>
-              <input
-                type="number"
-                min="200"
-                max="1500"
-                value={maxPrice}
-                onChange={(e) => setMaxPrice(Number(e.target.value))}
-                className="w-1/2 border-2 border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:border-green-500 text-sm"
-                placeholder="Max"
-              />
-            </div>
-            <input
-              type="range"
-              min="200"
-              max="1500"
-              value={maxPrice}
-              onChange={(e) => setMaxPrice(Number(e.target.value))}
-              className="w-full accent-green-600"
-            />
-            <div className="flex justify-between text-xs text-gray-500">
-              <span>${minPrice}</span>
-              <span>${maxPrice}</span>
-            </div>
+          <select
+            value={selectedAvailability}
+            onChange={(e) => setSelectedAvailability(e.target.value as any)}
+            className="w-full border-2 border-gray-300 px-3 py-3 rounded-md focus:outline-none focus:border-green-500 transition-colors bg-white text-sm"
+          >
+            <option value="all">All Availability</option>
+            <option value="AVAILABLE">Available</option>
+            <option value="UNAVAILABLE">Unavailable</option>
+          </select>
+        </div>
+
+        {/* Min Price */}
+        <div className="flex flex-col">
+          <label className="block text-xs font-semibold text-gray-700 mb-2">
+            Min Price (TND د.ت)
+          </label>
+          <input
+            type="number"
+            min="200"
+            max="1500"
+            value={minPrice}
+            onChange={(e) => setMinPrice(Number(e.target.value))}
+            className="w-full border-2 border-gray-300 px-3 py-3 rounded-md focus:outline-none focus:border-green-500 text-sm"
+            placeholder="Min"
+          />
+        </div>
+
+        {/* Max Price */}
+        <div className="flex flex-col">
+          <label className="block text-xs font-semibold text-gray-700 mb-2">
+            Max Price (TND د.ت)
+          </label>
+          <input
+            type="number"
+            min="200"
+            max="1500"
+            value={maxPrice}
+            onChange={(e) => setMaxPrice(Number(e.target.value))}
+            className="w-full border-2 border-gray-300 px-3 py-3 rounded-md focus:outline-none focus:border-green-500 text-sm"
+            placeholder="Max"
+          />
+        </div>
+      </div>
+
+      {/* Price Slider - Positioned under price boxes */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mt-4">
+        <div className="flex flex-col lg:col-start-4 lg:col-span-2">
+          <label className="block text-xs font-semibold text-gray-700 mb-2">
+            Price Range Slider
+          </label>
+          <input
+            type="range"
+            min="200"
+            max="1500"
+            value={maxPrice}
+            onChange={(e) => setMaxPrice(Number(e.target.value))}
+            className="w-full accent-green-600"
+          />
+          <div className="flex justify-between text-xs text-gray-500 mt-1">
+            <span>TND {minPrice}</span>
+            <span>TND {maxPrice}</span>
           </div>
         </div>
       </div>

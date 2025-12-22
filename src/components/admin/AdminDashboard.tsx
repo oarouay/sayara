@@ -10,7 +10,7 @@ import AdminDocsTab from './AdminDocsTab'
 import AdminSupportTab from './AdminSupportTab'
 import AdminCarsTab from './AdminCarsTab'
 
-type Tab = 'users' | 'cars' | 'bookings' | 'documents' | 'support'
+type Tab = 'users' | 'cars' | 'rentals' | 'documents' | 'support'
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<Tab>('users')
@@ -35,8 +35,8 @@ export default function AdminDashboard() {
                   <button onClick={() => setActiveTab('cars')} className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${activeTab === 'cars' ? 'bg-gradient-to-r from-green-600 to-green-500 text-white shadow-lg shadow-green-500/30 scale-105' : 'bg-white text-gray-700 hover:bg-gray-50 hover:shadow-md hover:scale-105 border border-gray-200'}`}>
                     Cars
                   </button>
-                  <button onClick={() => setActiveTab('bookings')} className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${activeTab === 'bookings' ? 'bg-gradient-to-r from-green-600 to-green-500 text-white shadow-lg shadow-green-500/30 scale-105' : 'bg-white text-gray-700 hover:bg-gray-50 hover:shadow-md hover:scale-105 border border-gray-200'}`}>
-                    Bookings
+                  <button onClick={() => setActiveTab('rentals')} className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${activeTab === 'rentals' ? 'bg-gradient-to-r from-green-600 to-green-500 text-white shadow-lg shadow-green-500/30 scale-105' : 'bg-white text-gray-700 hover:bg-gray-50 hover:shadow-md hover:scale-105 border border-gray-200'}`}>
+                    Rentals
                   </button>
                   <button onClick={() => setActiveTab('documents')} className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${activeTab === 'documents' ? 'bg-gradient-to-r from-green-600 to-green-500 text-white shadow-lg shadow-green-500/30 scale-105' : 'bg-white text-gray-700 hover:bg-gray-50 hover:shadow-md hover:scale-105 border border-gray-200'}`}>
                     Documents
@@ -54,7 +54,7 @@ export default function AdminDashboard() {
         <div className="mt-6">
           <div className="bg-white rounded-xl shadow-lg p-6">
             {activeTab === 'users' && <AdminUsersTab />}
-            {activeTab === 'bookings' && <AdminBookingsTab />}
+            {activeTab === 'rentals' && <AdminBookingsTab />}
             {activeTab === 'documents' && <AdminDocsTab />}
             {activeTab === 'support' && <AdminSupportTab />}
             {activeTab === 'cars' && <AdminCarsTab />}

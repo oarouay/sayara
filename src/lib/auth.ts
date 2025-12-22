@@ -15,7 +15,7 @@ export async function getUserFromToken() {
       valueLength: c.value?.length || 0
     })))
     
-    // ✅ FIX: Look for "token" instead of "auth-token"
+    // Look for "token" cookie
     const token = cookieStore.get("token")?.value
     
     if (!token) {
@@ -27,17 +27,18 @@ export async function getUserFromToken() {
     console.log("✅ Token found, length:", token.length)
     
     // Check if JWT_SECRET exists
-    if (!process.env.JWT_SECRET) {
+    const JWT_SECRET = process.env.JWT_SECRET
+    if (!JWT_SECRET) {
       console.error("❌ JWT_SECRET not defined in environment!")
-      console.log("🔍 ---- getUserFromToken END (no secret) ----")
+      console.log("Using fallback 'dev-secret'")
       return null
     }
     
-    console.log("✅ JWT_SECRET exists")
+    console.log("✅ JWT_SECRET exists (length:", JWT_SECRET.length, ")")
     
     // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET) as {
-      userId?: string  // ✅ FIX: Your JWT uses "userId" not "id"
+    const decoded = jwt.verify(token, JWT_SECRET) as {
+      userId?: string
       id?: string
       email?: string
       iat?: number
@@ -53,7 +54,7 @@ export async function getUserFromToken() {
     
     console.log("🔍 ---- getUserFromToken END (success) ----")
     
-    // ✅ FIX: Return with "id" field mapped from "userId"
+    // Return with "id" field mapped from "userId"
     return {
       id: decoded.userId || decoded.id || '',
       email: decoded.email || ''

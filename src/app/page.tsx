@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import type { CarMaker } from '@prisma/client'
 import Header from "../components/Header"
 import PromoBanner from "../components/HeroBanner"
 import SearchForm from "../components/SearchForm"
@@ -15,6 +16,33 @@ export default function LandingPage() {
   const [showAuth, setShowAuth] = useState<"login" | "register" | null>(null)
   const { setUser } = useAuth()
 
+  // make landing form match listings: fetch makers/types and pass them as props
+  const [makers, setMakers] = useState<CarMaker[]>([])
+  const [types, setTypes] = useState<string[]>([])
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetch('/api/cars')
+        if (!res.ok) return
+        const data = await res.json()
+        if (cancelled) return
+        if (Array.isArray(data)) {
+          setMakers([])
+          setTypes([])
+        } else {
+          setMakers(data.makers || [])
+          setTypes(data.types || [])
+        }
+      } catch (e) {
+        // ignore
+      }
+    })()
+
+    return () => { cancelled = true }
+  }, [])
+
   const handleAuthSuccess = (userData: PublicUser) => {
     setUser(userData) // 🔥 updates Header automatically
     setShowAuth(null)
@@ -27,7 +55,7 @@ export default function LandingPage() {
         onRegister={() => setShowAuth("register")}
       />
       <PromoBanner />
-      <SearchForm />
+      <SearchForm makers={makers} types={types} />
       <BrandScroller />
       <WhyChooseUs />
       <Footer />

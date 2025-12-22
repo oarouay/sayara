@@ -2,6 +2,7 @@
 import type { PublicUser } from "@/types/user"
 import { useState, FormEvent } from "react"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/app/context/AuthContext"
 
 interface AuthWizardProps {
   type: "login" | "register"
@@ -12,9 +13,11 @@ interface AuthWizardProps {
 
 export default function AuthWizard({ type, onClose, onSuccess }: AuthWizardProps) {
   const router = useRouter()
+  const { user, setUser } = useAuth()
   const [step, setStep] = useState<"login" | "register" | "2fa-method" | "2fa-verify">(type)
   const [dateValue, setDateValue] = useState('')
   const [nationalityValue, setNationalityValue] = useState('')
+  const [addressValue, setAddressValue] = useState('')
   const [twoFAMethod, setTwoFAMethod] = useState<"email" | "mobile" | null>(null)
   const [verificationCode, setVerificationCode] = useState('')
   const [registrationEmail, setRegistrationEmail] = useState('')
@@ -68,7 +71,7 @@ export default function AuthWizard({ type, onClose, onSuccess }: AuthWizardProps
             onSuccess={(user: PublicUser) => {
               onSuccess?.(user)
               onClose()
-              router.push('/car-deals')
+              // Keep user on current page (landing page) instead of redirecting
             }}
           />
         ) : step === "2fa-method" ? (
@@ -159,6 +162,7 @@ export default function AuthWizard({ type, onClose, onSuccess }: AuthWizardProps
             setRegistrationPhone('')
             setDateValue('')
             setNationalityValue('')
+            setAddressValue('')
             onClose()
           }
               }}
@@ -188,14 +192,17 @@ export default function AuthWizard({ type, onClose, onSuccess }: AuthWizardProps
             phone={registrationPhone}
             dateValue={dateValue}
             nationalityValue={nationalityValue}
+            addressValue={addressValue}
             onEmailChange={setRegistrationEmail}
             onPhoneChange={setRegistrationPhone}
             onDateChange={setDateValue}
             onNationalityChange={setNationalityValue}
+            onAddressChange={setAddressValue}
             onComplete={(user: PublicUser) => {
+              setUser(user)  // Auto-login the newly registered user
               onSuccess?.(user)
               onClose()
-              router.push('/car-deals')
+              // Keep user on current page (landing page) instead of redirecting
             }}
             onGoto2FAMethod={() => setStep('2fa-method')}
           />
@@ -220,15 +227,28 @@ function LoginForm({ onSuccess }: { onSuccess: (user: PublicUser) => void }) {
         credentials: 'include',
         body: JSON.stringify({ email, password }) 
       })
-      const data = await res.json()
-      if (res.ok && data.user) {
+
+      if (!res.ok) {
+        let errorMsg = 'Login failed';
+        try {
+          const errorData = await res.json();
+          errorMsg = errorData?.error || errorMsg;
+        } catch (e) {
+          // The error response was not JSON
+        }
+        throw new Error(errorMsg);
+      }
+
+      const data = await res.json();
+      if (data.user) {
         onSuccess(data.user)
       } else {
-        alert(data?.error || 'Login failed')
+        throw new Error('Login failed: No user data returned');
       }
     } catch (err: Error | unknown) {
-      console.error('Login error:', err)
-      alert(err instanceof Error ? err.message : 'Network error')
+      const message = err instanceof Error ? err.message : 'An unknown error occurred.';
+      console.error('Login error:', message);
+      alert(message);
     } finally { 
       setLoading(false) 
     }
@@ -267,11 +287,13 @@ interface RegisterFormProps {
   phone: string
   dateValue: string
   nationalityValue: string
+  addressValue: string
 
   onEmailChange: (v: string) => void
   onPhoneChange: (v: string) => void
   onDateChange: (v: string) => void
   onNationalityChange: (v: string) => void
+  onAddressChange: (v: string) => void
 
   onComplete?: (user: PublicUser) => void
   onGoto2FAMethod: () => void
@@ -279,7 +301,7 @@ interface RegisterFormProps {
 
 
 
-function RegisterForm({ email, phone, dateValue, nationalityValue, onEmailChange, onPhoneChange, onDateChange, onNationalityChange, onComplete, onGoto2FAMethod }: RegisterFormProps) {
+function RegisterForm({ email, phone, dateValue, nationalityValue, addressValue, onEmailChange, onPhoneChange, onDateChange, onNationalityChange, onAddressChange, onComplete, onGoto2FAMethod }: RegisterFormProps) {
   const [name, setName] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -292,6 +314,7 @@ function RegisterForm({ email, phone, dateValue, nationalityValue, onEmailChange
       const res = await fetch('/api/auth/register', { 
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' }, 
+        credentials: 'include',
         body: JSON.stringify({ 
           name, 
           email, 
@@ -299,19 +322,35 @@ function RegisterForm({ email, phone, dateValue, nationalityValue, onEmailChange
           phone, 
           nationality: nationalityValue, 
           dateOfBirth: dateValue, 
-          address: '' 
+          address: addressValue 
         }) 
-      })
-      const data = await res.json()
-      if (res.ok && data.user) {
-        onComplete?.(data.user)
-      } else if (res.status === 409) {
-        alert('User already exists')
-      } else {
-        alert(data?.error || 'Registration failed')
+      });
+
+      if (!res.ok) {
+        let errorMsg = 'Registration failed';
+        if (res.status === 409) {
+          errorMsg = 'A user with this email already exists.';
+        } else {
+          try {
+            const errorData = await res.json();
+            errorMsg = errorData?.error || errorMsg;
+          } catch (e) {
+            // The error response was not JSON
+          }
+        }
+        throw new Error(errorMsg);
       }
-    } catch (err) {
-      alert('Network error')
+
+      const data = await res.json();
+      if (data.user) {
+        onComplete?.(data.user);
+      } else {
+        throw new Error('Registration failed: No user data returned');
+      }
+    } catch (err: Error | unknown) {
+      const message = err instanceof Error ? err.message : 'An unknown error occurred.';
+      console.error('Registration error:', message);
+      alert(message);
     } finally { 
       setLoading(false) 
     }
@@ -371,6 +410,14 @@ function RegisterForm({ email, phone, dateValue, nationalityValue, onEmailChange
         <option value="American">American</option>
         <option value="Other">Other</option>
       </select>
+      <input 
+        type="text" 
+        placeholder="Address" 
+        value={addressValue} 
+        onChange={(e) => onAddressChange(e.target.value)} 
+        className="w-full border border-gray-200 bg-gray-50 px-3 py-2 rounded-md" 
+        required
+      />
       <div className="flex flex-col gap-2">
         <button 
           className="w-full bg-green-600 text-white py-2 rounded-md hover:bg-green-700" 

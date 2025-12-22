@@ -38,6 +38,27 @@ enum RENTAL_STATUS {
   CANCELLED
 }
 
+enum CarMaker {
+  Toyota
+  BMW
+  Mercedes
+  Audi
+  Ford
+  Peugeot
+  Renault
+  Kia
+  Hyundai
+  Volkswagen
+  Honda
+  Mazda
+  Nissan
+  Chevrolet
+  Jeep
+  Subaru
+}
+
+
+
 
 /* ===================== MODELS ===================== */
 
@@ -54,9 +75,19 @@ model User {
 
   driverLicenseNumber  String?
   driverLicenseVerified Boolean @default(false)
+  driverLicenseDocument String? // Base64 encoded document
 
   idDocumentNumber     String?
   idDocumentVerified   Boolean @default(false)
+  idDocumentContent    String? // Base64 encoded document
+
+  // Payment method storage
+  paymentMethod        PAYMTH?
+  cardHolderName       String?
+  cardNumber           String?  // Full card number
+  cardExpiryDate       String?  // MM/YY format
+  cardBrand            String?
+  billingAddress       String?
 
   payments             Payment[]
   rentals              Rental[]
@@ -76,26 +107,87 @@ model Payment {
   userId         String   @db.ObjectId
   user           User     @relation(fields: [userId], references: [id])
 
+  rentalId       String   @db.ObjectId
+  rental         Rental   @relation(fields: [rentalId], references: [id])
+
   createdAt      DateTime @default(now())
   cardLast4      String?
   cardBrand      String?
+  
+  // Flouci online payment tracking
+  flouciOrderId  String?  @unique
+  flouciTransactionId String?
 }
 
 model Rental {
   id              String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  // Optional reference to the Car document for easier lookups and updates
+  carId           String?  @db.ObjectId
+  car             Car?     @relation(fields: [carId], references: [id])
+
   carModel        String
   licensePlate    String
+  
+  // Pickup location with coordinates
   pickupLocation  String
+  pickupLatitude  Float?
+  pickupLongitude Float?
+  
+  // Dropoff location with coordinates
   dropoffLocation String
+  dropoffLatitude Float?
+  dropoffLongitude Float?
+  
   rentalDate      DateTime
   returnDate      DateTime
   dailyRate       Float
   totalCost       Float
+  deliveryFee     Float    @default(0)
   insurance       Boolean  @default(false)
+  paymentMethod   PAYMTH   @default(CASH)
   status          RENTAL_STATUS
 
   userId          String   @db.ObjectId
   user            User     @relation(fields: [userId], references: [id])
 
+  payments        Payment[]
+
   createdAt       DateTime @default(now())
+}
+
+model Car {
+  id                  String   @id @default(auto()) @map("_id") @db.ObjectId
+  maker               CarMaker
+  name                String
+  type                String
+  logo                String
+  image               String
+  monthly             Float
+  mileage             Int
+  insuranceCost       Float
+  price               Float
+  leasingTerm         Int
+  leasingMileageLimit Int
+
+  // Car location coordinates (Main Store by default)
+  location            String   @default("Main Store")
+  latitude            Float    @default(36.8178547692)
+  longitude           Float    @default(10.1796510816)
+
+  details             CarDetails?
+  rentals             Rental[]
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model CarDetails {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  keyInfo  Json?
+  stats    Json?
+  features Json?
+
+  car   Car    @relation(fields: [carId], references: [id])
+  carId String @unique @db.ObjectId
 }

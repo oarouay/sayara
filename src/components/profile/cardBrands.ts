@@ -47,6 +47,21 @@ export const CARD_BRANDS = [
   },
 ];
 
+export const getBrandGradient = (brandName: string): string => {
+  const brandGradients: Record<string, string> = {
+    visa: 'bg-gradient-to-br from-blue-600 to-blue-800',
+    mastercard: 'bg-gradient-to-br from-red-600 to-red-800',
+    amex: 'bg-gradient-to-br from-cyan-600 to-cyan-800',
+    discover: 'bg-gradient-to-br from-orange-600 to-orange-800',
+    unionpay: 'bg-gradient-to-br from-red-500 to-red-700',
+    jcb: 'bg-gradient-to-br from-sky-600 to-sky-800',
+    diners: 'bg-gradient-to-br from-amber-600 to-amber-800',
+    westernunion: 'bg-gradient-to-br from-yellow-500 to-yellow-700',
+  };
+  
+  return brandGradients[brandName.toLowerCase()] || brandGradients.westernunion;
+};
+
 export const detectCardBrand = (cardNumber: string) => {
   const cleaned = cardNumber.replace(/\s/g, '');
 

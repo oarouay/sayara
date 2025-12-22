@@ -1,51 +1,64 @@
 // components/profile/PaymentDetailsTab.tsx
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { detectCardBrand, getBrandGradient } from './cardBrands'
+import CardIcon from '../CardIcon'
+
+interface Rental {
+  id: string
+  carModel: string
+  licensePlate: string
+  carId?: string
+  car?: {
+    id: string
+    maker: string
+    name: string
+    type: string
+    image: string
+    logo: string
+  }
+}
+
+interface Payment {
+  id: string
+  amount: number
+  paymentMethod: 'CASH' | 'CARD' | 'ONLINE'
+  status: 'PENDING' | 'PAID' | 'FAILED'
+  paymentDate: string
+  cardLast4?: string
+  cardBrand?: string
+  rental: Rental
+}
 
 interface PaymentDetailsTabProps {
-  paymentDetails: {
-    cardHolder?: string
-    cardNumber?: string
-    expiryDate?: string
-    billingAddress?: string
+  onUpdate?: () => void;
+  paymentDetails?: {
+    cardHolder?: string;
+    cardNumber?: string;
+    cardBrand?: string;
+    expiryDate?: string;
+    billingAddress?: string;
+  };
+}
+
+const getStatusColor = (status: Payment['status']) => {
+  switch (status) {
+    case 'PAID':
+      return 'bg-green-100 text-green-800'
+    case 'PENDING':
+      return 'bg-yellow-100 text-yellow-800'
+    case 'FAILED':
+      return 'bg-red-100 text-red-800'
+    default:
+      return 'bg-gray-100 text-gray-800'
   }
 }
 
-// Card brand detection
-const detectCardBrand = (cardNumber: string) => {
-  const cleaned = cardNumber.replace(/\s/g, '')
-  
-  if (/^4/.test(cleaned)) {
-    return { 
-      brand: 'visa', 
-      bgGradient: 'from-blue-600 to-blue-800',
-      logo: '💳'
-    }
-  }
-  if (/^5[1-5]/.test(cleaned)) {
-    return { 
-      brand: 'mastercard', 
-      bgGradient: 'from-red-600 to-orange-600',
-      logo: '💳'
-    }
-  }
-  if (/^3[47]/.test(cleaned)) {
-    return { 
-      brand: 'amex', 
-      bgGradient: 'from-teal-600 to-cyan-600',
-      logo: '💳'
-    }
-  }
-  return { 
-    brand: 'generic', 
-    bgGradient: 'from-gray-700 to-gray-900',
-    logo: '💳'
-  }
-}
-
-export default function PaymentDetailsTab({ paymentDetails }: PaymentDetailsTabProps) {
+export default function PaymentDetailsTab({ paymentDetails, onUpdate }: PaymentDetailsTabProps) {
+  const [loading, setLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
+  const [showFullCard, setShowFullCard] = useState(false)
   const [successMessage, setSuccessMessage] = useState("")
   
   const [formData, setFormData] = useState({
@@ -55,6 +68,10 @@ export default function PaymentDetailsTab({ paymentDetails }: PaymentDetailsTabP
     cvv: "",
     billingAddress: paymentDetails?.billingAddress || ""
   })
+
+
+
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -88,11 +105,36 @@ export default function PaymentDetailsTab({ paymentDetails }: PaymentDetailsTabP
   }
 
   const handleSave = async () => {
-    // Here you would typically make an API call to save the data
-    // For now, we'll just simulate success
-    setSuccessMessage("Payment details updated successfully!")
-    setIsEditing(false)
-    
+    try {
+      const cardBrand = detectCardBrand(formData.cardNumber).brand
+      const res = await fetch('/api/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          paymentMethod: formData.cardNumber ? 'CARD' : undefined,
+          cardHolderName: formData.cardHolder,
+          cardNumber: formData.cardNumber ? formData.cardNumber.replace(/\s/g, '') : undefined,
+          cardExpiryDate: formData.expiryDate || undefined,
+          cardBrand: cardBrand,
+          billingAddress: formData.billingAddress
+          // CVV is NOT sent to server for security - it's only used for display in the form
+        })
+      })
+
+      if (res.ok) {
+        setSuccessMessage("Payment details updated successfully!")
+        setIsEditing(false)
+        if (onUpdate) {
+          onUpdate()
+        }
+      } else {
+        setSuccessMessage("Failed to save payment details")
+      }
+    } catch (error) {
+      console.error('Error saving payment:', error)
+      setSuccessMessage("Error saving payment details")
+    }
     setTimeout(() => setSuccessMessage(""), 3000)
   }
 
@@ -107,14 +149,23 @@ export default function PaymentDetailsTab({ paymentDetails }: PaymentDetailsTabP
     setIsEditing(false)
   }
 
-  const maskCardNumber = (cardNumber: string) => {
+  const maskCardNumber = (cardNumber: string, showFull: boolean = false) => {
     const cleaned = cardNumber.replace(/\s/g, "")
     if (!cleaned || cleaned.length < 4) return "**** **** **** ****"
+    if (showFull) {
+      // Format full number as XXXX XXXX XXXX XXXX
+      return cleaned.replace(/(\d{4})/g, "$1 ").trim()
+    }
     const lastFour = cleaned.slice(-4)
     return `**** **** **** ${lastFour}`
   }
 
-  const brandInfo = detectCardBrand(formData.cardNumber || paymentDetails?.cardNumber || "")
+  // Use brand from form data while editing (full card number available)
+  // Use saved brand when viewing (only first 6 + last 4 digits available)
+  const brandName = isEditing 
+    ? detectCardBrand(formData.cardNumber).brand 
+    : (paymentDetails?.cardBrand || 'westernunion')
+  const brandInfo = { brand: brandName, bgGradient: '' }
 
   return (
     <div className="p-8">
@@ -178,7 +229,7 @@ export default function PaymentDetailsTab({ paymentDetails }: PaymentDetailsTabP
             />
           ) : (
             <p className="text-gray-900 font-mono font-medium">
-              {maskCardNumber(paymentDetails?.cardNumber || "")}
+              {maskCardNumber(paymentDetails?.cardNumber || "", false)}
             </p>
           )}
         </div>
@@ -200,7 +251,7 @@ export default function PaymentDetailsTab({ paymentDetails }: PaymentDetailsTabP
             />
           ) : (
             <p className="text-gray-900 font-medium">
-              {paymentDetails?.expiryDate || "Not set"}
+              {paymentDetails?.expiryDate && paymentDetails.expiryDate.trim() ? paymentDetails.expiryDate : "Not set"}
             </p>
           )}
         </div>
@@ -250,22 +301,26 @@ export default function PaymentDetailsTab({ paymentDetails }: PaymentDetailsTabP
       {/* Credit Card Preview */}
       {!isEditing && paymentDetails?.cardNumber && (
         <div className="mt-10">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Card Preview</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Saved Card
+            <span className="text-xs text-gray-500 ml-2">(Click to view details)</span>
+          </h3>
 
           <div
-            className={`bg-gradient-to-br ${brandInfo.bgGradient} rounded-xl p-6 text-white max-w-sm shadow-2xl transform hover:scale-105 transition-transform`}
+            className={`${getBrandGradient(brandInfo.brand)} rounded-xl p-6 text-white max-w-sm shadow-2xl transform hover:scale-105 transition-transform cursor-pointer`}
+            onClick={() => setShowFullCard(!showFullCard)}
           >
             {/* Card Header */}
             <div className="flex justify-between items-start mb-12">
               <div className="text-sm font-semibold opacity-80">CREDIT CARD</div>
-              <div className="text-3xl">{brandInfo.logo}</div>
+              <CardIcon brand={brandInfo.brand} className="h-10 w-auto" />
             </div>
 
             {/* Card Number */}
             <div className="mb-6">
               <p className="text-xs opacity-70 mb-2 tracking-wide">CARD NUMBER</p>
               <p className="text-lg font-mono tracking-widest">
-                {maskCardNumber(paymentDetails.cardNumber)}
+                {showFullCard ? maskCardNumber(paymentDetails.cardNumber, false) : maskCardNumber(paymentDetails.cardNumber)}
               </p>
             </div>
 
@@ -280,7 +335,83 @@ export default function PaymentDetailsTab({ paymentDetails }: PaymentDetailsTabP
               <div>
                 <p className="text-xs opacity-70 mb-1 tracking-wide">EXPIRES</p>
                 <p className="text-sm font-semibold">
-                  {paymentDetails.expiryDate || "N/A"}
+                  {paymentDetails.expiryDate && paymentDetails.expiryDate.trim() ? paymentDetails.expiryDate : "N/A"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Full Card Details Modal */}
+          {showFullCard && (
+            <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-6 max-w-sm">
+              <h4 className="font-semibold text-gray-900 mb-4">Full Card Details</h4>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-xs text-gray-600 mb-1">Card Holder</p>
+                  <p className="text-sm font-mono text-gray-900">{paymentDetails.cardHolder || "Not set"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600 mb-1">Full Card Number</p>
+                  <p className="text-sm font-mono text-gray-900">{maskCardNumber(paymentDetails.cardNumber, false)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600 mb-1">Card Brand</p>
+                  <p className="text-sm font-mono text-gray-900">{paymentDetails?.cardBrand || "Unknown"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600 mb-1">Expiry Date</p>
+                  <p className="text-sm font-mono text-gray-900">{paymentDetails.expiryDate || "Not set"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600 mb-1">Billing Address</p>
+                  <p className="text-sm text-gray-900">{paymentDetails.billingAddress || "Not set"}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowFullCard(false)}
+                className="mt-4 text-sm text-blue-600 hover:text-blue-800 font-medium"
+              >
+                Hide Details
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Live Card Preview While Editing */}
+      {isEditing && formData.cardNumber && (
+        <div className="mt-10">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Card Preview</h3>
+
+          <div
+            className={`${getBrandGradient(brandInfo.brand)} rounded-xl p-6 text-white max-w-sm shadow-2xl`}
+          >
+            {/* Card Header */}
+            <div className="flex justify-between items-start mb-12">
+              <div className="text-sm font-semibold opacity-80">CREDIT CARD</div>
+              <CardIcon brand={brandInfo.brand} className="h-10 w-auto" />
+            </div>
+
+            {/* Card Number */}
+            <div className="mb-6">
+              <p className="text-xs opacity-70 mb-2 tracking-wide">CARD NUMBER</p>
+              <p className="text-lg font-mono tracking-widest">
+                {maskCardNumber(formData.cardNumber)}
+              </p>
+            </div>
+
+            {/* Card Details */}
+            <div className="flex justify-between items-end">
+              <div>
+                <p className="text-xs opacity-70 mb-1 tracking-wide">CARD HOLDER</p>
+                <p className="text-sm font-semibold uppercase">
+                  {formData.cardHolder || "YOUR NAME"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs opacity-70 mb-1 tracking-wide">EXPIRES</p>
+                <p className="text-sm font-semibold">
+                  {formData.expiryDate || "MM/YY"}
                 </p>
               </div>
             </div>

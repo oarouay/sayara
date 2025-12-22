@@ -14,9 +14,11 @@ export type PublicUser = {
 
   driverLicenseNumber?: string | null
   driverLicenseVerified: boolean
+  driverLicenseDocument?: string | null
 
   idDocumentNumber?: string | null
   idDocumentVerified: boolean
+  idDocumentContent?: string | null
 
   createdAt: string
   updatedAt: string
@@ -24,7 +26,11 @@ export type PublicUser = {
   rentals: RentalData[]
 
   // ✅ Saved card info (optional)
-  paymentDetails?: PaymentDetails | null
+  cardHolderName?: string | null
+  cardLastFour?: string | null
+  cardBrand?: string | null
+  billingAddress?: string | null
+  expiryDate?: string | null
 
   // ✅ Payment history from backend
   payments: PaymentRecord[]

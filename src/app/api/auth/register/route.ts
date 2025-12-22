@@ -2,8 +2,13 @@ import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import { cookies } from 'next/headers'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret'
+
+if (!process.env.JWT_SECRET) {
+  console.warn('⚠️  JWT_SECRET not set in environment. Using fallback dev-secret.')
+}
 
 function sanitize(user: { password: string; [key: string]: string | number | boolean | Date | null } | null) {
   if (!user) return null
@@ -45,10 +50,22 @@ export async function POST(req: Request) {
       throw dbErr
     }
 
-    const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: '7d' })
+    // Sign token using { userId } for consistency with login
+    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '7d' })
 
     const res = NextResponse.json({ user: sanitize(user) })
-    res.headers.set('Set-Cookie', `token=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${7 * 24 * 60 * 60}${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`)
+    
+    // Use Next.js cookies API to set the cookie
+    const cookieStore = await cookies();
+    cookieStore.set('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60, // 7 days
+      path: '/'
+    });
+    
+    console.log('Registration successful, cookie set');
     return res
   } catch (err) {
     // Log error for debugging

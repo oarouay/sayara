@@ -15,26 +15,31 @@ export async function GET() {
     }
 
     // Verify token
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string }
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET) as { userId?: string, id?: string }
+      
+      // Get user from database
+      const user = await prisma.user.findUnique({
+        where: { id: decoded.userId || decoded.id },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          role: true,
+          // Don't send password
+        }
+      })
 
-    // Get user from database
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        phone: true,
-        role: true,
-        // Don't send password
+      if (!user) {
+        return NextResponse.json({ user: null }, { status: 401 })
       }
-    })
 
-    if (!user) {
+      return NextResponse.json({ user })
+    } catch (verifyError) {
+      console.error('JWT verification failed:', verifyError)
       return NextResponse.json({ user: null }, { status: 401 })
     }
-
-    return NextResponse.json({ user })
   } catch (error) {
     console.error('Auth error:', error)
     return NextResponse.json({ user: null }, { status: 401 })

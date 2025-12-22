@@ -20,12 +20,12 @@ export default function BrandScroller() {
     { name: "Chevrolet", logo: "/data/chevrolet.svg" },
     { name: "Jeep", logo: "/data/jeep.svg" },
     { name: "Mazda", logo: "/data/mazda.svg" },
-
-    
   ];
 
   // Duplicate array for seamless infinite loop
   const scrollBrands = [...brands, ...brands];
+  const brandCount = brands.length;
+  const scrollDistance = `calc(-1 * 160px * ${brandCount} - 1 * 40px * ${brandCount})`;
 
   return (
     <section className="py-10 bg-white overflow-hidden">
@@ -39,7 +39,7 @@ export default function BrandScroller() {
             transform: translateX(0);
           }
           100% {
-            transform: translateX(calc(-1 * 160px * ${brands.length} - 1 * 40px * ${brands.length}));
+            transform: translateX(${scrollDistance});
           }
         }
         

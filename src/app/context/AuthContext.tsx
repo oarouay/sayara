@@ -6,7 +6,8 @@ interface User {
   id: string
   name: string
   email: string
-  image?: string
+  phone?: string
+  role: "USER" | "ADMIN"
 }
 
 interface AuthContextType {
@@ -24,25 +25,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     async function fetchUser() {
       try {
-        const res = await fetch("/api/auth/me", {
-          credentials: "include",
-        })
+        const res = await fetch('/api/auth/me', {
+          credentials: 'include',
+        });
 
-        if (res.ok) {
-          const data = await res.json()
-          setUser(data.user)
+        console.log('Auth fetch response status:', res.status);
+        console.log('Auth fetch response headers:', Object.fromEntries(res.headers.entries()));
+
+        const responseText = await res.text();
+        console.log('Auth fetch response text:', responseText);
+
+        const contentType = res.headers.get('content-type');
+
+        if (res.ok && contentType && contentType.includes('application/json')) {
+          try {
+            const data = JSON.parse(responseText);
+            setUser(data.user || null);
+          } catch (e) {
+            console.error('Failed to parse JSON:', e);
+            setUser(null);
+          }
         } else {
-          setUser(null)
+          if (!res.ok) {
+            console.warn(`Auth fetch response not OK: ${res.status}`);
+          }
+          if (!(contentType && contentType.includes('application/json'))) {
+            console.warn(`Unexpected content type: ${contentType}`);
+          }
+          setUser(null);
         }
-      } catch {
-        setUser(null)
+      } catch (error) {
+        console.error('Auth fetch failed:', error);
+        setUser(null);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     }
 
-    fetchUser()
-  }, [])
+    fetchUser();
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, loading, setUser }}>

@@ -4,35 +4,162 @@ import { getUserFromToken } from "@/lib/auth"
 import { cookies } from "next/headers"
 
 export async function GET() {
-  console.log("---- /api/profile DEBUG START ----")
+  try {
+    const authUser = await getUserFromToken()
+    if (!authUser) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+    }
 
-  // ✅ 1. Check what cookies are actually received
-  const cookieStore = await cookies()
-  console.log("Cookies received:", cookieStore.getAll())
+    const user = await prisma.user.findUnique({
+      where: { id: authUser.id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        address: true,
+        nationality: true,
+        dateOfBirth: true,
+        driverLicenseNumber: true,
+        driverLicenseVerified: true,
+        driverLicenseDocument: true,
+        idDocumentNumber: true,
+        idDocumentVerified: true,
+        idDocumentContent: true,
+        paymentMethod: true,
+        cardHolderName: true,
+        cardNumber: true,
+        cardExpiryDate: true,
+        cardBrand: true,
+        billingAddress: true,
+        role: true,
+        createdAt: true,
+        rentals: {
+          select: {
+            id: true,
+            carModel: true,
+            licensePlate: true,
+            pickupLocation: true,
+            dropoffLocation: true,
+            rentalDate: true,
+            returnDate: true,
+            totalCost: true,
+            status: true,
+            createdAt: true,
+          },
+          orderBy: { createdAt: 'desc' as const },
+        },
+        payments: {
+          select: {
+            id: true,
+            amount: true,
+            paymentMethod: true,
+            status: true,
+            paymentDate: true,
+            cardLast4: true,
+            cardBrand: true,
+            createdAt: true,
+            rental: {
+              select: {
+                id: true,
+                carModel: true,
+              },
+            },
+          },
+          orderBy: { createdAt: 'desc' as const },
+        },
+      },
+    })
 
-  // ✅ 2. Check what getUserFromToken() returns
-  const authUser = await getUserFromToken()
-  console.log("Decoded authUser:", authUser)
+    if (!user) {
+      return NextResponse.json({ message: "User not found" }, { status: 404 })
+    }
 
-  if (!authUser) {
-    console.log("❌ No authUser → returning 401")
-    console.log("---- /api/profile DEBUG END ----")
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+    return NextResponse.json({ user })
+  } catch (error) {
+    console.error("Error fetching profile:", error)
+    return NextResponse.json({ message: "Failed to fetch profile", error: String(error) }, { status: 500 })
   }
+}
 
-  // ✅ 3. Check the ID being used in Prisma
-  console.log("Looking up user with ID:", authUser.id)
+export async function PUT(request: Request) {
+  try {
+    const authUser = await getUserFromToken()
+    if (!authUser) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+    }
 
-  const user = await prisma.user.findUnique({
-    where: { id: authUser.id },
-    include: {
-      payments: true,
-      rentals: true,
-    },
-  })
+    const body = await request.json()
+    const {
+      name,
+      email,
+      phone,
+      address,
+      nationality,
+      dateOfBirth,
+      driverLicenseNumber,
+      idDocumentNumber,
+      cardHolderName,
+      cardNumber,
+      cardExpiryDate,
+      cardBrand,
+      billingAddress,
+      paymentMethod,
+      driverLicenseDocument,
+      idDocumentContent,
+    } = body
 
-  console.log("Prisma user result:", user)
-  console.log("---- /api/profile DEBUG END ----")
+    // If payment method is being updated, just update user fields (don't create payment record)
+    // Payment records are created when a rental is actually paid for
 
-  return NextResponse.json({ user })
+    const user = await prisma.user.update({
+      where: { id: authUser.id },
+      data: {
+        ...(name && { name }),
+        ...(email && { email }),
+        ...(phone && { phone }),
+        ...(address && { address }),
+        ...(nationality && { nationality }),
+        ...(dateOfBirth && { dateOfBirth: new Date(dateOfBirth) }),
+        ...(driverLicenseNumber && { driverLicenseNumber }),
+        ...(driverLicenseDocument && { driverLicenseDocument }),
+        ...(idDocumentNumber && { idDocumentNumber }),
+        ...(idDocumentContent && { idDocumentContent }),
+        ...(paymentMethod && { paymentMethod }),
+        ...(cardHolderName && { cardHolderName }),
+        ...(cardNumber && { cardNumber }),
+        ...(cardExpiryDate && { cardExpiryDate }),
+        ...(cardBrand && { cardBrand }),
+        ...(billingAddress && { billingAddress }),
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        address: true,
+        nationality: true,
+        dateOfBirth: true,
+        driverLicenseNumber: true,
+        driverLicenseVerified: true,
+        driverLicenseDocument: true,
+        idDocumentNumber: true,
+        idDocumentVerified: true,
+        idDocumentContent: true,
+        paymentMethod: true,
+        cardHolderName: true,
+        cardNumber: true,
+        cardExpiryDate: true,
+        cardBrand: true,
+        billingAddress: true,
+        role: true,
+        createdAt: true,
+      },
+    })
+
+    return NextResponse.json({ user, message: "Profile updated successfully" })
+  } catch (error) {
+    console.error("Error updating profile:", error)
+    return NextResponse.json({ message: "Failed to update profile", error: String(error) }, { status: 500 })
+  }
 }
