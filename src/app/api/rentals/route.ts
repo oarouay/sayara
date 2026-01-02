@@ -201,6 +201,10 @@ export async function POST(request: Request) {
 
     if (isNaN(+start) || isNaN(+end) || end <= start) return NextResponse.json({ message: 'Invalid date range' }, { status: 400 })
 
+    // Normalize to start/end of day to avoid timezone off-by-one issues
+    start.setHours(0,0,0,0)
+    end.setHours(23,59,59,999)
+
     const days = Math.ceil((+end - +start) / (1000 * 60 * 60 * 24))
 
     const computedDaily = typeof dailyRate === 'number' ? Number(dailyRate) : (car.monthly ? Number(car.monthly) / 30 : Number(car.price ?? 0) / 30)

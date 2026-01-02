@@ -4,12 +4,12 @@ export type RentalData = {
   licensePlate: string
   pickupLocation: string
   dropoffLocation: string
-  rentalDate: string   // converted from DateTime
-  returnDate: string   // converted from DateTime
+  rentalDate: string   // converted from DateTime (ISO)
+  returnDate: string   // converted from DateTime (ISO)
   dailyRate: number
   totalCost: number
   insurance: boolean
-  status: "active" | "completed" | "pending" | "cancelled"
+  status: "ACTIVE" | "COMPLETED" | "PENDING" | "CANCELLED"
 
   driverName?: string
   driverPhone?: string

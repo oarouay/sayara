@@ -64,6 +64,25 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       }
     }
 
+    // Enforce basic allowed transitions to avoid invalid jumps
+    if (status) {
+      const allowed: Record<string, string[]> = {
+        PENDING: ['ACTIVE','CANCELLED'],
+        ACTIVE: ['COMPLETED','CANCELLED'],
+        COMPLETED: [],
+        CANCELLED: [],
+      }
+      const desired = status.toUpperCase()
+      // fetch existing status to validate transition
+      const existing = await prisma.rental.findUnique({ where: { id }, select: { status: true } })
+      if (existing && desired !== existing.status) {
+        const allowedForExisting = allowed[existing.status] || []
+        if (!allowedForExisting.includes(desired)) {
+          return NextResponse.json({ message: `Invalid status transition from ${existing.status} to ${desired}` }, { status: 400 })
+        }
+      }
+    }
+
     const updateData: any = {}
     if (status !== undefined) updateData.status = status.toUpperCase()
     if (carModel !== undefined) updateData.carModel = carModel

@@ -5,12 +5,14 @@ import { cookies } from 'next/headers';
 
 export async function GET(request: Request) {
   console.log('---- /api/cars GET START ----');
+  console.log('Request URL:', request.url);
   try {
     const cookieStore = await cookies();
     console.log('Cookies received for /api/cars GET:', cookieStore.getAll());
 
     const url = new URL(request.url);
     const searchParams = url.searchParams;
+    console.log('Query params:', Object.fromEntries(searchParams.entries()));
 
     // Basic filters from query parameters
     const where: any = {};
@@ -39,10 +41,12 @@ export async function GET(request: Request) {
     // if location query provided, we'll filter cars that have rentals with that pickup location (simple heuristic)
 
     // First get matching cars (details only)
+    console.log('Finding cars with where:', JSON.stringify(where));
     const cars = await prisma.car.findMany({
       where,
       include: { details: true },
     });
+    console.log('Found cars count:', cars.length);
 
     // If availability filter was requested, compute it from rentals
     const av = availability ? String(availability).toUpperCase() : null;
@@ -77,6 +81,7 @@ export async function GET(request: Request) {
       if (!startDate) startDate = s;
       if (!endDate) endDate = e;
     }
+    console.log('Computed date window for availability check:', { startDate: startDate?.toISOString(), endDate: endDate?.toISOString() });
 
     if (av || cars.length > 0 || filteredByLocationCarIds) {
       const carIds = cars.map(c => c.id);
@@ -96,6 +101,8 @@ export async function GET(request: Request) {
         },
         select: { carId: true, status: true, rentalDate: true, returnDate: true },
       });
+
+      console.log('Fetched rentals for availability check, count:', rentals.length);
 
       // build map: for each car, highest-priority status (ACTIVE > PENDING > otherwise)
       const map: Record<string,string[]> = {};
@@ -126,11 +133,13 @@ export async function GET(request: Request) {
 
     // attach availability property to each car returned
     const carsWithAvailability = filteredCars.map(c => ({ ...c, availability: availabilityMap[c.id] || 'AVAILABLE' }));
+    console.log('Returning carsWithAvailability count:', carsWithAvailability.length);
 
     // Derive available makers and types (full set, not just filtered)
     const all = await prisma.car.findMany({ select: { maker: true, type: true } });
     const makers = Array.from(new Set(all.map(a => a.maker))).filter(Boolean);
     const types = Array.from(new Set(all.map(a => a.type))).filter(Boolean);
+    console.log('Makers count:', makers.length, 'Types count:', types.length);
 
     console.log('---- /api/cars GET END ----');
 
@@ -156,6 +165,7 @@ export async function POST(request: Request) {
     // ignore availability from client; availability is computed from rentals
     if (carData.availability) delete carData.availability;
 
+    // sanitize: preserve numeric precision (use Number instead of rounding)
     const sanitize = (value: any): any => {
       if (value === null || value === undefined) return value;
       if (Array.isArray(value)) return value.map((v: any) => sanitize(v));
@@ -167,10 +177,10 @@ export async function POST(request: Request) {
       if (typeof value === 'string') {
         const s = value.trim();
         const m = s.match(/-?\d+(?:\.\d+)?/);
-        if (m) return Math.round(Number(m[0]));
+        if (m) return Number(m[0]);
         return s;
       }
-      if (typeof value === 'number') return Math.round(value);
+      if (typeof value === 'number') return Number(value);
       return value;
     };
 
@@ -183,10 +193,18 @@ export async function POST(request: Request) {
 
     const sanitizedDetails = details ? sanitizeDetails(details) : undefined;
 
+    // If client passed a free-form details object (not shaped as {keyInfo,stats,features}),
+    // store it under `keyInfo` so Prisma won't reject unknown fields.
+    let detailsPayload: any = undefined;
+    if (sanitizedDetails) {
+      const hasKnown = ['keyInfo', 'stats', 'features'].some(k => Object.prototype.hasOwnProperty.call(sanitizedDetails, k));
+      detailsPayload = hasKnown ? sanitizedDetails : { keyInfo: sanitizedDetails };
+    }
+
     const newCar = await prisma.car.create({
       data: {
         ...carData,
-        details: sanitizedDetails ? { create: sanitizedDetails } : undefined,
+        details: detailsPayload ? { create: detailsPayload } : undefined,
       },
       include: {
         details: true,

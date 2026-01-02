@@ -37,12 +37,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         const contentType = res.headers.get('content-type');
 
+        let fetchedUser: User | null = null
         if (res.ok && contentType && contentType.includes('application/json')) {
           try {
             const data = JSON.parse(responseText);
-            setUser(data.user || null);
+            fetchedUser = data.user || null;
+            setUser(fetchedUser);
           } catch (e) {
             console.error('Failed to parse JSON:', e);
+            fetchedUser = null;
             setUser(null);
           }
         } else {
@@ -52,7 +55,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (!(contentType && contentType.includes('application/json'))) {
             console.warn(`Unexpected content type: ${contentType}`);
           }
+          fetchedUser = null;
           setUser(null);
+        }
+
+        // During local development, provide a hardcoded admin user for convenience.
+        // This will only apply when no user was returned from the API.
+        const isClient = typeof window !== 'undefined'
+        const isDev = isClient && process.env.NODE_ENV === 'development'
+        if (isDev && !fetchedUser) {
+          const devUser: User = {
+            id: 'dev-admin',
+            name: 'Dev Admin',
+            email: 'test@gmail.com',
+            role: 'ADMIN',
+          }
+          setUser(devUser)
         }
       } catch (error) {
         console.error('Auth fetch failed:', error);
