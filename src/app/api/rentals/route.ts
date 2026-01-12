@@ -289,18 +289,51 @@ export async function POST(request: Request) {
     } catch (dbError) {
       console.error('❌ Database error during rental creation:', dbError)
       const dbErrorMsg = dbError instanceof Error ? dbError.message : String(dbError)
-      console.error('❌ Database error details:', dbErrorMsg)
-      throw dbError // Re-throw to be caught by outer catch
+      const dbErrorType = dbError instanceof Error ? dbError.constructor.name : typeof dbError
+      const dbErrorCode = (dbError as any)?.code
+      console.error('❌ Database error message:', dbErrorMsg)
+      console.error('❌ Database error type:', dbErrorType)
+      if (dbErrorCode) console.error('❌ Database error code:', dbErrorCode)
+      console.error('❌ Database error details:', JSON.stringify(dbError, Object.getOwnPropertyNames(dbError as object)))
+      
+      // Return proper error response instead of re-throwing
+      return NextResponse.json({ 
+        message: 'Database error during rental creation', 
+        error: dbErrorMsg,
+        errorType: dbErrorType,
+        errorCode: dbErrorCode
+      }, { status: 500 })
     }
   } catch (error) {
     console.error('❌ Error creating rental:', error)
     const errorMsg = error instanceof Error ? error.message : String(error)
+    const errorType = error instanceof Error ? error.constructor.name : typeof error
     console.error('❌ Error details:', errorMsg)
-    console.error('❌ Full error object:', JSON.stringify(error, null, 2))
-    return NextResponse.json({ 
-      message: 'Failed to create rental', 
-      error: errorMsg,
-      errorType: error instanceof Error ? error.constructor.name : typeof error,
-    }, { status: 500 })
+    console.error('❌ Error type:', errorType)
+    console.error('❌ Full error object:', JSON.stringify(error, Object.getOwnPropertyNames(error)))
+    
+    // Always return proper JSON error response
+    try {
+      return NextResponse.json({ 
+        message: 'Failed to create rental', 
+        error: errorMsg,
+        errorType: errorType,
+        details: error instanceof Error ? {
+          name: error.name,
+          message: error.message,
+          stack: error.stack
+        } : {}
+      }, { status: 500 })
+    } catch (responseErr) {
+      console.error('❌ Failed to create error response:', responseErr)
+      // Fallback error response
+      return new NextResponse(JSON.stringify({ 
+        message: 'Failed to create rental', 
+        error: 'Internal server error'
+      }), { 
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
   }
 }

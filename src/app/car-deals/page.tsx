@@ -39,10 +39,10 @@ export default function CarDealsPage() {
             setLoading(false)
         }
         fetchCars()
-    }, [searchParams?.toString()])
+    }, [searchParams])
 
     return (
-        <div className="bg-gray-50 min-h-screen flex flex-col">
+        <div className="bg-gray-50 dark:bg-gray-900 min-h-screen flex flex-col transition-colors duration-200">
             <Header
                 onLogin={() => setShowAuth("login")}
                 onRegister={() => setShowAuth("register")}
@@ -53,31 +53,31 @@ export default function CarDealsPage() {
                     <SearchForm makers={makers} types={types} />
                     <Link
                         href="/car-deals"
-                        className="ml-4 text-gray-500 hover:text-gray-700 transition-colors"
+                        className="ml-4 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
                         title="Reset Filters"
                     >
                         ↺
                     </Link>
                 </div>
 
-                <h1 className="text-4xl font-extrabold text-green-700 mb-8 text-center">
+                <h1 className="text-4xl font-extrabold text-green-700 dark:text-green-400 mb-8 text-center">
                     Got something to your liking?
                 </h1>
 
                 {loading ? (
                     <div className="text-center py-20">
-                        <p className="text-xl text-gray-600">Loading...</p>
+                        <p className="text-xl text-gray-600 dark:text-gray-400">Loading...</p>
                     </div>
                 ) : cars.length === 0 ? (
                     <div className="text-center py-20">
-                        <p className="text-xl text-gray-600">Yeah, we don't have that here yet 😞</p>
+                        <p className="text-xl text-gray-600 dark:text-gray-400">Yeah, we don&apos;t have that here yet 😞</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {cars.filter(c => c?.id).map((car) => (
-                            <div key={car.id} className="bg-white rounded-2xl shadow-lg overflow-hidden">
+                            <div key={car.id} className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden transition-colors">
                                 {/* Car Image */}
-                                <div className="w-full h-48 bg-gray-200 flex items-center justify-center overflow-hidden">
+                                <div className="w-full h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
                                     {car.image && car.image.trim() ? (
                                         <img 
                                             src={car.image} 
@@ -91,26 +91,26 @@ export default function CarDealsPage() {
                                     )}
                                 </div>
                                 <div className="p-6">
-                                    <h2 className="text-xl font-bold text-green-700">
+                                    <h2 className="text-xl font-bold text-green-700 dark:text-green-400">
                                         {car.maker} {car.name}
                                     </h2>
-                                    <p className="mt-2 text-gray-600">
-                                        <span className="font-semibold text-green-600">
+                                    <p className="mt-2 text-gray-600 dark:text-gray-300">
+                                        <span className="font-semibold text-green-600 dark:text-green-400">
                                             TND {car.monthly}/month
                                         </span>{" "}
-                                        <span className="ml-2 text-sm text-gray-500">
+                                        <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
                                             {car.mileage.toLocaleString()} km
                                         </span>
                                     </p>
-                                    <p className="mt-1 text-gray-600 text-sm">
+                                    <p className="mt-1 text-gray-600 dark:text-gray-300 text-sm">
                                         Insurance:{" "}
-                                        <span className="font-semibold text-green-600">
+                                        <span className="font-semibold text-green-600 dark:text-green-400">
                                             TND {car.insuranceCost}/month
                                         </span>
                                     </p>
                                     <Link
                                         href={`/car-deals/${String(car.id)}`}
-                                        className="mt-4 block w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-lg text-center transition-all duration-300"
+                                        className="mt-4 block w-full bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white font-semibold py-2 rounded-lg text-center transition-all duration-300"
                                     >
                                         View Details
                                     </Link>

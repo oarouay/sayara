@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { DollarSign, Check } from 'lucide-react';
 import { CarMaker } from '@prisma/client';
 
 export default function SearchForm({ makers = [], types = [] }: { makers?: CarMaker[]; types?: string[] }) {
@@ -20,10 +19,6 @@ export default function SearchForm({ makers = [], types = [] }: { makers?: CarMa
   const [selectedAvailability, setSelectedAvailability] = useState<'all' | 'AVAILABLE' | 'UNAVAILABLE'>('all');
   const [minPrice, setMinPrice] = useState(200);
   const [maxPrice, setMaxPrice] = useState(1500);
-
-  // bounds derived from available cars (used to set slider min/max)
-  const [minBound, setMinBound] = useState(200);
-  const [maxBound, setMaxBound] = useState(1500);
 
   // Keep local lists in sync when props change
   useEffect(() => {
@@ -68,14 +63,12 @@ export default function SearchForm({ makers = [], types = [] }: { makers?: CarMa
 
         const all = data.cars || [];
         if (all.length > 0) {
-          // We no longer update minBound/maxBound; they stay at 200-1500
-          // Just init minPrice/maxPrice from URL if not already set
           const hasQMin = Boolean(searchParams?.get('minPrice'));
           const hasQMax = Boolean(searchParams?.get('maxPrice'));
           if (!hasQMin) setMinPrice(200);
           if (!hasQMax) setMaxPrice(1500);
         }
-      } catch (e) {
+      } catch {
         // ignore
       } finally {
         setFetchedOptions(true);
@@ -89,23 +82,17 @@ export default function SearchForm({ makers = [], types = [] }: { makers?: CarMa
     // Use the query-string form to avoid re-running when the searchParams object identity changes
     const qMaker = searchParams?.get('maker') ?? 'all'
     const qType = searchParams?.get('type') ?? 'all'
-    const qAvailability = searchParams?.get('availability') ?? 'all'
-    const qMin = Number(searchParams?.get('minPrice') ?? minBound)
-    const qMax = Number(searchParams?.get('maxPrice') ?? maxBound)
+    const qAvailability = (searchParams?.get('availability') ?? 'all') as 'all' | 'AVAILABLE' | 'UNAVAILABLE'
+    const qMin = Number(searchParams?.get('minPrice') ?? 200)
+    const qMax = Number(searchParams?.get('maxPrice') ?? 1500)
 
     // Only update when different to avoid causing extra renders
     setSelectedMaker(prev => prev !== qMaker ? qMaker : prev)
     setSelectedType(prev => prev !== qType ? qType : prev)
-    setSelectedAvailability(prev => prev !== qAvailability ? qAvailability as any : prev)
+    setSelectedAvailability(prev => prev !== qAvailability ? qAvailability : prev)
     setMinPrice(prev => prev !== qMin ? qMin : prev)
     setMaxPrice(prev => prev !== qMax ? qMax : prev)
-  }, [searchStr, minBound, maxBound]);
-
-  // Keep prices within updated bounds
-  useEffect(() => {
-    setMinPrice(prev => Math.max(minBound, Math.min(prev, maxBound)));
-    setMaxPrice(prev => Math.max(minBound, Math.min(prev, maxBound)));
-  }, [minBound, maxBound]);
+  }, [searchStr, searchParams]);
 
   // Ensure minPrice never exceeds maxPrice
   useEffect(() => {
@@ -130,17 +117,17 @@ export default function SearchForm({ makers = [], types = [] }: { makers?: CarMa
   };
 
   return (
-    <section className="bg-white shadow-lg rounded-lg p-6 max-w-7xl mx-auto -mt-10 z-10 relative">
+    <section className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 max-w-7xl mx-auto -mt-10 z-10 relative transition-colors duration-200">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Car Maker */}
         <div className="flex flex-col">
-          <label className="block text-xs font-semibold text-gray-700 mb-2">
+          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">
             Car Maker
           </label>
           <select
             value={selectedMaker}
             onChange={(e) => setSelectedMaker(e.target.value)}
-            className="w-full border-2 border-gray-300 px-3 py-3 rounded-md focus:outline-none focus:border-green-500 transition-colors bg-white text-sm"
+            className="w-full border-2 border-gray-300 dark:border-gray-600 px-3 py-3 rounded-md focus:outline-none focus:border-green-500 dark:focus:border-green-400 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
           >
             <option value="all">All Makers</option>
             {localMakers.length === 0 ? (
@@ -157,13 +144,13 @@ export default function SearchForm({ makers = [], types = [] }: { makers?: CarMa
 
         {/* Car Type */}
         <div className="flex flex-col">
-          <label className="block text-xs font-semibold text-gray-700 mb-2">
+          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">
             Car Type
           </label>
           <select
             value={selectedType}
             onChange={(e) => setSelectedType(e.target.value)}
-            className="w-full border-2 border-gray-300 px-3 py-3 rounded-md focus:outline-none focus:border-green-500 transition-colors bg-white text-sm"
+            className="w-full border-2 border-gray-300 dark:border-gray-600 px-3 py-3 rounded-md focus:outline-none focus:border-green-500 dark:focus:border-green-400 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
           >
             <option value="all">All Types</option>
             {localTypes.length === 0 ? (
@@ -180,13 +167,13 @@ export default function SearchForm({ makers = [], types = [] }: { makers?: CarMa
 
         {/* Availability Status */}
         <div className="flex flex-col">
-          <label className="block text-xs font-semibold text-gray-700 mb-2">
+          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">
             Availability
           </label>
           <select
             value={selectedAvailability}
-            onChange={(e) => setSelectedAvailability(e.target.value as any)}
-            className="w-full border-2 border-gray-300 px-3 py-3 rounded-md focus:outline-none focus:border-green-500 transition-colors bg-white text-sm"
+            onChange={(e) => setSelectedAvailability(e.target.value as 'all' | 'AVAILABLE' | 'UNAVAILABLE')}
+            className="w-full border-2 border-gray-300 dark:border-gray-600 px-3 py-3 rounded-md focus:outline-none focus:border-green-500 dark:focus:border-green-400 transition-colors bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
           >
             <option value="all">All Availability</option>
             <option value="AVAILABLE">Available</option>
@@ -196,7 +183,7 @@ export default function SearchForm({ makers = [], types = [] }: { makers?: CarMa
 
         {/* Min Price */}
         <div className="flex flex-col">
-          <label className="block text-xs font-semibold text-gray-700 mb-2">
+          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">
             Min Price (TND د.ت)
           </label>
           <input
@@ -205,14 +192,14 @@ export default function SearchForm({ makers = [], types = [] }: { makers?: CarMa
             max="1500"
             value={minPrice}
             onChange={(e) => setMinPrice(Number(e.target.value))}
-            className="w-full border-2 border-gray-300 px-3 py-3 rounded-md focus:outline-none focus:border-green-500 text-sm"
+            className="w-full border-2 border-gray-300 dark:border-gray-600 px-3 py-3 rounded-md focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm transition-colors"
             placeholder="Min"
           />
         </div>
 
         {/* Max Price */}
         <div className="flex flex-col">
-          <label className="block text-xs font-semibold text-gray-700 mb-2">
+          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">
             Max Price (TND د.ت)
           </label>
           <input
@@ -221,7 +208,7 @@ export default function SearchForm({ makers = [], types = [] }: { makers?: CarMa
             max="1500"
             value={maxPrice}
             onChange={(e) => setMaxPrice(Number(e.target.value))}
-            className="w-full border-2 border-gray-300 px-3 py-3 rounded-md focus:outline-none focus:border-green-500 text-sm"
+            className="w-full border-2 border-gray-300 dark:border-gray-600 px-3 py-3 rounded-md focus:outline-none focus:border-green-500 dark:focus:border-green-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm transition-colors"
             placeholder="Max"
           />
         </div>
@@ -230,7 +217,7 @@ export default function SearchForm({ makers = [], types = [] }: { makers?: CarMa
       {/* Price Slider - Positioned under price boxes */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mt-4">
         <div className="flex flex-col lg:col-start-4 lg:col-span-2">
-          <label className="block text-xs font-semibold text-gray-700 mb-2">
+          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">
             Price Range Slider
           </label>
           <input
@@ -241,7 +228,7 @@ export default function SearchForm({ makers = [], types = [] }: { makers?: CarMa
             onChange={(e) => setMaxPrice(Number(e.target.value))}
             className="w-full accent-green-600"
           />
-          <div className="flex justify-between text-xs text-gray-500 mt-1">
+          <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
             <span>TND {minPrice}</span>
             <span>TND {maxPrice}</span>
           </div>
@@ -252,7 +239,7 @@ export default function SearchForm({ makers = [], types = [] }: { makers?: CarMa
       <div className="mt-6 flex justify-center">
         <button 
           onClick={handleSearch}
-          className="bg-green-600 text-white px-12 py-3 rounded-md hover:bg-green-700 transition-colors font-semibold shadow-md hover:shadow-lg"
+          className="bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white px-12 py-3 rounded-md transition-colors font-semibold shadow-md hover:shadow-lg"
         >
           Search Cars
         </button>

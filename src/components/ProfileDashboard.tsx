@@ -43,71 +43,72 @@ export default function ProfileDashboard() {
   }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     fetchProfile()
   }, [])
 
   if (loading) {
-    return <div className="py-20 text-center">Loading profile...</div>
+    return <div className="py-20 text-center dark:text-gray-300">Loading profile...</div>
   }
 
   if (!user) {
-    return <div className="py-20 text-center">Not authenticated</div>
+    return <div className="py-20 text-center dark:text-gray-300">Not authenticated</div>
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
       <Header />
 
       <main className="flex-1 max-w-6xl mx-auto px-4 py-8 w-full">
-        <h1 className="text-4xl font-bold mb-2">My Profile</h1>
-        <p className="text-gray-600 mb-8">
+        <h1 className="text-4xl font-bold mb-2 dark:text-white">My Profile</h1>
+        <p className="text-gray-600 dark:text-gray-400 mb-8">
           Manage your account, rentals, and payments
         </p>
 
-        <div className="flex gap-4 border-b mb-6">
+        <div className="flex gap-4 border-b dark:border-gray-700 mb-6">
           <button
             onClick={() => setActiveTab("details")}
-            className={`pb-2 font-medium ${
+            className={`pb-2 font-medium transition-colors ${
               activeTab === "details"
-                ? "border-b-2 border-green-600 text-green-600"
-                : "text-gray-500"
+                ? "border-b-2 border-green-600 text-green-600 dark:border-green-400 dark:text-green-400"
+                : "text-gray-500 dark:text-gray-400"
             }`}
           >
             PROFILE
           </button>
           <button
             onClick={() => setActiveTab("rental")}
-            className={`pb-2 font-medium ${
+            className={`pb-2 font-medium transition-colors ${
               activeTab === "rental"
-                ? "border-b-2 border-green-600 text-green-600"
-                : "text-gray-500"
+                ? "border-b-2 border-green-600 text-green-600 dark:border-green-400 dark:text-green-400"
+                : "text-gray-500 dark:text-gray-400"
             }`}
           >
             RENTALS
           </button>
           <button
             onClick={() => setActiveTab("payment")}
-            className={`pb-2 font-medium ${
+            className={`pb-2 font-medium transition-colors ${
               activeTab === "payment"
-                ? "border-b-2 border-green-600 text-green-600"
-                : "text-gray-500"
+                ? "border-b-2 border-green-600 text-green-600 dark:border-green-400 dark:text-green-400"
+                : "text-gray-500 dark:text-gray-400"
             }`}
           >
             PAYMENTS
           </button>
           <button
             onClick={() => setActiveTab("documents")}
-            className={`pb-2 font-medium ${
+            className={`pb-2 font-medium transition-colors ${
               activeTab === "documents"
-                ? "border-b-2 border-green-600 text-green-600"
-                : "text-gray-500"
+                ? "border-b-2 border-green-600 text-green-600 dark:border-green-400 dark:text-green-400"
+                : "text-gray-500 dark:text-gray-400"
             }`}
           >
             DOCUMENTS
           </button>
         </div>
 
-        <div className="bg-white rounded shadow p-6 min-h-[600px] w-full overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded shadow p-6 min-h-[600px] w-full overflow-hidden transition-colors">
           {activeTab === "details" && (
             <UserDetailsTab
               userProfile={{
