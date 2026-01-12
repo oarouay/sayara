@@ -49,7 +49,7 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="bg-white min-h-screen flex flex-col">
+    <div className="bg-white dark:bg-gray-900 min-h-screen flex flex-col transition-colors duration-200">
       <Header
         onLogin={() => setShowAuth("login")}
         onRegister={() => setShowAuth("register")}

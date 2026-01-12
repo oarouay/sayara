@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { MapContainer, TileLayer, Marker, Circle, useMapEvents, Popup } from 'react-leaflet'
+import { useState } from 'react'
+import { MapContainer, TileLayer, Marker, Circle, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -44,12 +44,10 @@ interface LocationSearchModalProps {
   currentLocation?: { name: string; latitude: number; longitude: number } | null
 }
 
-function MapClickHandler({ onSelect, mainStoreCoords }: { onSelect: (lat: number, lng: number) => void; mainStoreCoords: [number, number] }) {
+function MapClickHandler({ onSelect }: { onSelect: (lat: number, lng: number) => void }) {
   useMapEvents({
     click(e: L.LeafletMouseEvent) {
       const { lat, lng } = e.latlng
-      // Check if clicked near main store
-      const distance = L.latLng(lat, lng).distanceTo(L.latLng(mainStoreCoords[0], mainStoreCoords[1])) / 1000
       onSelect(lat, lng)
     },
   })
@@ -62,14 +60,9 @@ export default function LocationSearchModal({
   onSelect,
   currentLocation,
 }: LocationSearchModalProps) {
-  const [mounted, setMounted] = useState(false)
   const [selectedLoc, setSelectedLoc] = useState<{ lat: number; lng: number } | null>(null)
 
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  if (!mounted || !isOpen) return null
+  if (!isOpen) return null
 
   const mapCenter: [number, number] = currentLocation
     ? [currentLocation.latitude, currentLocation.longitude]
@@ -77,13 +70,13 @@ export default function LocationSearchModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto transition-colors">
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900">Select Pickup Location</h2>
+        <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-6 flex items-center justify-between transition-colors">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Select Pickup Location</h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+            className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 text-2xl font-bold"
           >
             ✕
           </button>
@@ -159,7 +152,6 @@ export default function LocationSearchModal({
                 {/* Click Handler */}
                 <MapClickHandler
                   onSelect={(lat, lng) => setSelectedLoc({ lat, lng })}
-                  mainStoreCoords={[MAIN_STORE.latitude, MAIN_STORE.longitude]}
                 />
               </MapContainer>
             </div>
@@ -172,9 +164,9 @@ export default function LocationSearchModal({
                 <p className="text-xs text-blue-700 mt-1">
                   Distance from Main Store:{' '}
                   {(
-                    (L.latLng(selectedLoc.lat, selectedLoc.lng).distanceTo(
+                    L.latLng(selectedLoc.lat, selectedLoc.lng).distanceTo(
                       L.latLng(MAIN_STORE.latitude, MAIN_STORE.longitude)
-                    ) / 1000) as any
+                    ) / 1000
                   ).toFixed(2)}{' '}
                   km
                 </p>

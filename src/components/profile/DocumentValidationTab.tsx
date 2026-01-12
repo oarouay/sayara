@@ -189,7 +189,7 @@ export default function DocumentValidationTab({ documents, setDocuments }: Docum
         <ul className="text-sm text-blue-800 space-y-2">
           <li className="flex items-start gap-2">
             <span className="text-blue-600 font-bold">•</span>
-            <span>Clear photo of your driver's license (front and back)</span>
+            <span>Clear photo of your driver&apos;s license (front and back)</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-blue-600 font-bold">•</span>
@@ -206,7 +206,7 @@ export default function DocumentValidationTab({ documents, setDocuments }: Docum
       {(documents.driverLicenseVerified && documents.nationalIdVerified) && (
         <div className="mt-6 bg-green-50 border border-green-200 rounded-lg p-6">
           <p className="text-green-800 font-semibold flex items-center gap-2">
-            ✓ All documents verified! You're all set to book rentals.
+            ✓ All documents verified! You&apos;re all set to book rentals.
           </p>
         </div>
       )}

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getUserFromToken } from '@/lib/auth'
-import { createFlouciPayment, generateOrderId } from '@/lib/flouci'
 
 const isValidObjectId = (id?: string) => typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id)
 
@@ -81,7 +80,7 @@ export async function POST(request: Request) {
     }
 
     // Validate paymentMethod
-    const allowedMethods = ['CASH', 'CARD', 'ONLINE']
+    const allowedMethods = ['CASH', 'CARD']
     if (!allowedMethods.includes(paymentMethod)) {
       return NextResponse.json({ message: 'Invalid payment method' }, { status: 400 })
     }
@@ -108,60 +107,6 @@ export async function POST(request: Request) {
 
     if (rental.userId !== authUser.id && user.role !== 'ADMIN') {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 })
-    }
-
-    // Handle Flouci online payments
-    if (paymentMethod === 'ONLINE') {
-      const orderId = generateOrderId(rentalId)
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-      const callbackUrl = `${baseUrl}/api/payments/flouci/callback`
-      const errorUrl = `${baseUrl}/profile?error=payment_failed`
-
-      const flouciResponse = await createFlouciPayment({
-        amount,
-        rentalId,
-        userId: authUser.id,
-        orderId,
-        description: `Rental payment for ${rental.carModel} (${rentalId})`,
-        customerEmail: rental.user.email,
-        customerPhone: rental.user.phone || '',
-        callbackUrl,
-        errorUrl,
-      })
-
-      if (!flouciResponse.success) {
-        return NextResponse.json(
-          { message: 'Failed to create payment link', error: flouciResponse.error },
-          { status: 500 }
-        )
-      }
-
-      // Create payment record with Flouci details
-      // TODO: The 'as any' is a temporary workaround for a stale Prisma client.
-      // Run 'npx prisma generate' to fix the underlying type issue.
-      const payment = await prisma.payment.create({
-        data: {
-          amount: Number(amount),
-          paymentMethod: 'ONLINE',
-          status: 'PENDING',
-          userId: authUser.id,
-          rentalId: rentalId,
-          flouciOrderId: orderId,
-          flouciTransactionId: flouciResponse.transactionId,
-        } as any,
-        include: {
-          user: { select: { id: true, name: true, email: true, phone: true } },
-        }
-      })
-
-      return NextResponse.json(
-        {
-          payment,
-          redirectUrl: flouciResponse.paymentUrl,
-          message: 'Payment link created. Redirect user to payment URL.',
-        },
-        { status: 201 }
-      )
     }
 
     // Handle CASH and CARD payments

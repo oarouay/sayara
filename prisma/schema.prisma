@@ -11,7 +11,7 @@ generator client {
 datasource db {
   provider = "mongodb"
   url      = env("DATABASE_URL")
- }
+}
 
 /* ===================== ENUMS ===================== */
 enum ROLE {
@@ -113,10 +113,6 @@ model Payment {
   createdAt      DateTime @default(now())
   cardLast4      String?
   cardBrand      String?
-  
-  // Flouci online payment tracking
-  flouciOrderId  String?  @unique
-  flouciTransactionId String?
 }
 
 model Rental {

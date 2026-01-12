@@ -27,13 +27,13 @@ export default function Footer() {
   };
 
   return (
-    <footer className="bg-gray-900 text-gray-300 py-14 mt-20">
+    <footer className="bg-gray-900 dark:bg-gray-950 text-gray-300 dark:text-gray-400 py-14 mt-20 transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-5 gap-10">
         
         {/* Brand */}
         <div>
           <h2 className="text-2xl font-bold text-white">Sayara</h2>
-          <p className="mt-4 text-gray-400 text-sm leading-relaxed">
+          <p className="mt-4 text-gray-400 dark:text-gray-500 text-sm leading-relaxed">
             Sayara provides fast, secure, and affordable car rentals worldwide.
             Trusted by thousands of customers every day.
           </p>
@@ -43,20 +43,20 @@ export default function Footer() {
         <div>
           <h3 className="text-white font-semibold text-lg">Customer Support</h3>
           <ul className="mt-4 space-y-2 text-sm">
-            <li><a href="#" className="hover:text-white">Contact Us</a></li>
-            <li><a href="#" className="hover:text-white">Help Center</a></li>
-            <li><a href="#" className="hover:text-white">FAQ</a></li>
-            <li><a href="#" className="hover:text-white">Manage Booking</a></li>
+            <li><a href="#" className="hover:text-white dark:hover:text-gray-300 transition-colors">Contact Us</a></li>
+            <li><a href="#" className="hover:text-white dark:hover:text-gray-300 transition-colors">Help Center</a></li>
+            <li><a href="#" className="hover:text-white dark:hover:text-gray-300 transition-colors">FAQ</a></li>
+            <li><a href="#" className="hover:text-white dark:hover:text-gray-300 transition-colors">Manage Booking</a></li>
           </ul>
         </div>
 
         {/* Company */}
         <div>
-          <h3 className="text-white font-semibold text-lg">Company</h3>
+          <h3 className="text-gray-900 dark:text-white font-semibold text-lg">Company</h3>
           <ul className="mt-4 space-y-2 text-sm">
-            <li><a href="#" className="hover:text-white">About Us</a></li>
-            <li><a href="#" className="hover:text-white">Terms & Conditions</a></li>
-            <li><a href="#" className="hover:text-white">Privacy Policy</a></li>
+            <li><a href="#" className="hover:text-gray-950 dark:hover:text-gray-300 transition-colors">About Us</a></li>
+            <li><a href="#" className="hover:text-gray-950 dark:hover:text-gray-300 transition-colors">Terms & Conditions</a></li>
+            <li><a href="#" className="hover:text-gray-950 dark:hover:text-gray-300 transition-colors">Privacy Policy</a></li>
           </ul>
         </div>
 
@@ -64,9 +64,9 @@ export default function Footer() {
         <div>
           <h3 className="text-white font-semibold text-lg">Car Rental Guides</h3>
           <ul className="mt-4 space-y-2 text-sm">
-            <li><a href="#" className="hover:text-white">How to Rent a Car</a></li>
-            <li><a href="#" className="hover:text-white">Insurance Explained</a></li>
-            <li><a href="#" className="hover:text-white">Best Cars for Road Trips</a></li>
+            <li><a href="#" className="hover:text-white dark:hover:text-gray-300 transition-colors">How to Rent a Car</a></li>
+            <li><a href="#" className="hover:text-white dark:hover:text-gray-300 transition-colors">Insurance Explained</a></li>
+            <li><a href="#" className="hover:text-white dark:hover:text-gray-300 transition-colors">Best Cars for Road Trips</a></li>
           </ul>
         </div>
 

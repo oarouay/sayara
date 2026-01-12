@@ -28,9 +28,9 @@ export default function BrandScroller() {
   const scrollDistance = `calc(-1 * 160px * ${brandCount} - 1 * 40px * ${brandCount})`;
 
   return (
-    <section className="py-10 bg-white overflow-hidden">
-      <h2 className="text-3xl md:text-4xl font-bold text-gray-800 text-center mb-8">
-          Our <span className="text-green-600">Trusted</span> Partners
+    <section className="py-10 bg-white dark:bg-gray-800 overflow-hidden transition-colors duration-200">
+      <h2 className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-white text-center mb-8">
+          Our <span className="text-green-600 dark:text-green-400">Trusted</span> Partners
         </h2>
 
       <style>{`
@@ -66,7 +66,7 @@ export default function BrandScroller() {
                   className="w-full h-full object-contain grayscale hover:grayscale-0 transition"
                 />
               </div>
-              <p className="mt-2 text-green-700 font-semibold text-sm">
+              <p className="mt-2 text-green-700 dark:text-green-400 font-semibold text-sm">
                 {brand.name}
               </p>
             </div>

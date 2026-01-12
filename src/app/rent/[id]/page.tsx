@@ -36,7 +36,7 @@ export default function RentPage() {
   const [minPickupDate, setMinPickupDate] = useState('')
   const [nextAvailableDate, setNextAvailableDate] = useState<Date | null>(null)
   const [isCarAvailableNow, setIsCarAvailableNow] = useState(false)
-  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'ONLINE'>('CASH')
+  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD'>('CASH')
   const [userHasSavedCard, setUserHasSavedCard] = useState(false)
 
   // Format date as YYYY-MM-DD for input type="date"
@@ -124,21 +124,24 @@ export default function RentPage() {
   }, [minPickupDate])
 
   // Set default locations to Main Store if car is available now
+  // Only set defaults on initial load, not on every isCarAvailableNow change
   useEffect(() => {
-    if (isCarAvailableNow) {
+    if (isCarAvailableNow && !pickupLocation && !dropoffLocation) {
       const mainStoreLocation = {
         name: 'Main Store',
         latitude: 36.8178547692,
         longitude: 10.1796510816,
       }
+      console.log('🔄 Setting default locations to Main Store (car available)')
       setPickupLocation(mainStoreLocation)
       setDropoffLocation(mainStoreLocation)
-    } else {
-      // Car is rented, clear locations so user must select them
+    } else if (!isCarAvailableNow && (pickupLocation || dropoffLocation)) {
+      // Only clear if car is rented AND user hasn't manually selected different locations
+      console.log('🔄 Clearing locations (car not available)')
       setPickupLocation(null)
       setDropoffLocation(null)
     }
-  }, [isCarAvailableNow])
+  }, [isCarAvailableNow]) // Keep this dependency
 
   // Reset form function
   const resetForm = () => {
@@ -195,17 +198,17 @@ export default function RentPage() {
   }, [id])
 
   if (loading) return (
-    <div className="bg-white min-h-screen flex flex-col">
+    <div className="bg-white dark:bg-gray-900 min-h-screen flex flex-col">
       <Header />
       <main className="flex-1 max-w-3xl mx-auto px-6 py-14">
-        <p className="text-center py-20 text-gray-600">Loading...</p>
+        <p className="text-center py-20 text-gray-600 dark:text-gray-400">Loading...</p>
       </main>
       <Footer />
     </div>
   )
 
   if (error || !car) return (
-    <div className="bg-white min-h-screen flex flex-col">
+    <div className="bg-white dark:bg-gray-900 min-h-screen flex flex-col">
       <Header />
       <main className="flex-1 max-w-3xl mx-auto px-6 py-14">
         <p className="text-center py-20 text-red-600">{error || 'Car not found'}</p>
@@ -225,8 +228,17 @@ export default function RentPage() {
       return
     }
 
+    console.log('📋 Form submission started')
+    console.log('   Pickup location:', pickupLocation)
+    console.log('   Dropoff location:', dropoffLocation)
+    
     if (!pickupLocation || !dropoffLocation) {
-      setError('Please select both pickup and dropoff locations on the map')
+      const missingFields = []
+      if (!pickupLocation) missingFields.push('pickup location')
+      if (!dropoffLocation) missingFields.push('dropoff location')
+      const errorMsg = `Please select: ${missingFields.join(' and ')}`
+      console.error('❌ Validation failed:', errorMsg)
+      setError(errorMsg)
       return
     }
 
@@ -251,6 +263,24 @@ export default function RentPage() {
       const totalCost = Number(((dailyRate + (insurance ? insuranceDaily : 0)) * days).toFixed(2))
 
       setError(null)
+      const requestBody = {
+        carId: car.id,
+        carModel: `${car.maker} ${car.name}`,
+        rentalDate: start.toISOString(),
+        returnDate: end.toISOString(),
+        pickupLocation: pickupLocation.name,
+        pickupLatitude: pickupLocation.latitude,
+        pickupLongitude: pickupLocation.longitude,
+        dropoffLocation: dropoffLocation.name,
+        dropoffLatitude: dropoffLocation.latitude,
+        dropoffLongitude: dropoffLocation.longitude,
+        licensePlate: 'SAYARTI-TN',
+        dailyRate,
+        totalCost,
+        insurance,
+        paymentMethod
+      }
+      
       console.log('📤 Sending rental request with data:', {
         carId: car.id,
         carModel: `${car.maker} ${car.name}`,
@@ -263,6 +293,8 @@ export default function RentPage() {
         rentalDate: start.toISOString(),
         returnDate: end.toISOString(),
       })
+
+      console.log('📤 Full request body:', JSON.stringify(requestBody, null, 2))
 
       const res = await fetch('/api/rentals', {
         method: 'POST',
@@ -287,34 +319,56 @@ export default function RentPage() {
         })
       })
 
-      console.log('📥 Rental response status:', res.status)
+      console.log('📥 Rental response received')
+      console.log('   Status:', res.status)
+      console.log('   Status text:', res.statusText)
+      console.log('   Headers:', Array.from(res.headers.entries()))
 
       if (res.status === 401) {
+        console.warn('⚠️ Unauthorized - redirecting to login')
         setShowAuth('login')
         return
       }
 
       if (!res.ok) {
-        let payload: Record<string, any> = {}
+        console.error('❌ Response not OK, attempting to read error details...')
+        let payload: any = null
         let rawText = ''
+        
         try {
-          rawText = await res.clone().text()
-          console.log('📄 Raw response text:', rawText)
-          if (rawText) {
-            payload = JSON.parse(rawText)
+          // Clone response to read body
+          const clonedRes = res.clone()
+          rawText = await clonedRes.text()
+          console.log('   Raw response body:', rawText)
+          
+          // Try to parse as JSON
+          if (rawText && rawText.trim()) {
+            try {
+              payload = JSON.parse(rawText)
+              console.log('   Parsed JSON payload:', payload)
+            } catch (parseErr) {
+              console.error('   ⚠️ Could not parse response as JSON')
+              console.error('   Parse error:', parseErr instanceof Error ? parseErr.message : String(parseErr))
+            }
+          } else {
+            console.log('   Response body is empty')
           }
-        } catch (parseErr) {
-          console.error('⚠️ Failed to parse response:', parseErr)
+        } catch (readErr) {
+          console.error('   ⚠️ Could not read response body')
+          console.error('   Read error:', readErr instanceof Error ? readErr.message : String(readErr))
         }
         
-        const errorMessage = (payload?.error as string) || (payload?.message as string) || `HTTP ${res.status}: ${res.statusText || 'Error'}`
-        console.error('❌ Rental creation failed:', {
-          status: res.status,
-          statusText: res.statusText,
-          message: errorMessage,
-          rawResponse: rawText,
-          fullPayload: payload,
-        })
+        const errorMessage = 
+          (typeof payload?.error === 'string' ? payload.error : undefined) ||
+          (typeof payload?.message === 'string' ? payload.message : undefined) ||
+          (rawText && rawText.trim() ? rawText : undefined) ||
+          `HTTP ${res.status}: ${res.statusText || 'Unknown Error'}`
+          
+        console.error('❌ Rental creation failed:')
+        console.error('   HTTP Status:', res.status)
+        console.error('   Error message:', errorMessage)
+        console.error('   Full response:', payload || rawText || '(empty response)')
+        
         setError(errorMessage)
         return
       }
@@ -324,6 +378,11 @@ export default function RentPage() {
       console.log('✅ Rental created:', rentalId)
 
       // Create payment record
+      console.log('💳 Creating payment record...')
+      console.log('   Rental ID:', rentalId)
+      console.log('   Amount:', totalCost)
+      console.log('   Payment method:', paymentMethod)
+
       const paymentRes = await fetch('/api/payments', {
         method: 'POST',
         credentials: 'include',
@@ -335,55 +394,73 @@ export default function RentPage() {
         })
       })
 
+      console.log('📥 Payment response received')
+      console.log('   Status:', paymentRes.status)
+
       if (!paymentRes.ok) {
-        const payload = await paymentRes.json().catch(() => ({}))
-        const errorMsg = payload?.message || payload?.error || 'Failed to process payment'
-        console.error('❌ Payment creation failed:', errorMsg)
+        let errorPayload: any = {}
+        let errorText = ''
+        
+        try {
+          const clonedRes = paymentRes.clone()
+          errorText = await clonedRes.text()
+          console.log('   Raw response:', errorText)
+          
+          if (errorText && errorText.trim()) {
+            try {
+              errorPayload = JSON.parse(errorText)
+              console.log('   Parsed payload:', errorPayload)
+            } catch (parseErr) {
+              console.error('   ⚠️ Could not parse as JSON')
+            }
+          }
+        } catch (readErr) {
+          console.error('   ⚠️ Could not read response:', readErr)
+        }
+        
+        const errorMsg = 
+          (typeof errorPayload?.message === 'string' ? errorPayload.message : undefined) ||
+          (typeof errorPayload?.error === 'string' ? errorPayload.error : undefined) ||
+          (typeof errorPayload?.details === 'string' ? errorPayload.details : undefined) ||
+          (errorText && errorText.trim() ? errorText : undefined) ||
+          'Failed to process payment'
+          
+        console.error('❌ Payment creation failed:')
+        console.error('   Status:', paymentRes.status)
+        console.error('   Message:', errorMsg)
+        console.error('   Full response:', errorPayload || errorText)
+        
         setError(errorMsg)
         return
       }
 
       const paymentData = await paymentRes.json()
-      console.log('✅ Payment created:', paymentData.payment?.id)
+      console.log('✅ Payment record created:', paymentData.payment?.id)
 
-      // Handle Flouci online payments - redirect to payment gateway
-      if (paymentMethod === 'ONLINE') {
-        if (paymentData.redirectUrl) {
-          // Redirect to Flouci payment page
-          try {
-            console.log('🔄 Redirecting to Flouci:', paymentData.redirectUrl)
-            window.location.href = paymentData.redirectUrl
-          } catch (redirectErr) {
-            console.error('Failed to redirect to Flouci:', redirectErr)
-            setError('Failed to redirect to payment gateway. Please try again.')
-          }
-        } else {
-          setError('Payment gateway URL not available. Please try again.')
-        }
-        return
-      }
-
-      // Success: go to profile rentals (for CASH and CARD payments)
+      // Success: go to profile rentals
       console.log('✅ Booking completed successfully! Redirecting to profile...')
       router.push('/profile?success=booking_completed')
 
     } catch (err: any) {
-      console.error('🔴 Unexpected error:', err)
-      console.error('Error message:', err.message)
-      console.error('Error stack:', err.stack)
-      setError(err.message || 'Unexpected error while creating rental')
+      console.error('🔴 Unexpected error during rental submission:', err)
+      console.error('Error type:', typeof err)
+      console.error('Error constructor:', err?.constructor?.name)
+      console.error('Error message:', err?.message)
+      console.error('Error stack:', err?.stack)
+      console.error('Full error:', JSON.stringify(err, Object.getOwnPropertyNames(err)))
+      setError(err?.message || 'Unexpected error while creating rental')
     }
   }
 
   return (
-    <div className="bg-white min-h-screen flex flex-col">
+    <div className="bg-white dark:bg-gray-900 min-h-screen flex flex-col">
       <Header />
       <main className="flex-1 max-w-3xl mx-auto px-6 py-14">
         <h1 className="text-2xl font-bold mb-6">Rent {car.maker} {car.name}</h1>
-        <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-md shadow-sm">
+        <form onSubmit={handleSubmit} className="space-y-6 bg-white dark:bg-gray-800 p-6 rounded-md shadow-sm">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <label className="flex flex-col">
-              <span className="text-sm text-gray-600">Pickup date</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Pickup date</span>
               <input
                 type="date"
                 value={pickupDate}
@@ -393,13 +470,13 @@ export default function RentPage() {
                 required
               />
               {nextAvailableDate && (
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
                   Available from: {nextAvailableDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </p>
               )}
             </label>
             <label className="flex flex-col">
-              <span className="text-sm text-gray-600">Return date</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Return date</span>
               <input
                 type="date"
                 value={returnDate}
@@ -424,21 +501,21 @@ export default function RentPage() {
           </div>
 
           <label className="flex flex-col">
-            <span className="text-sm text-gray-600">License plate</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">License plate</span>
             <input 
               type="text" 
               value="SAYARTI-TN" 
               disabled 
-              className="mt-2 p-3 border rounded bg-gray-100 text-gray-700 cursor-not-allowed"
+              className="mt-2 p-3 border rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 cursor-not-allowed"
             />
           </label>
 
           <div className="flex items-center gap-4">
             <label className="flex items-center gap-2">
               <input type="checkbox" checked={insurance} onChange={e => setInsurance(e.target.checked)} />
-              <span className="text-sm text-gray-600">Add insurance</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Add insurance</span>
             </label>
-            <div className="ml-auto text-sm text-gray-700">Estimated daily: <strong>TND {defaultDailyRate.toFixed(2)}</strong></div>
+            <div className="ml-auto text-sm text-gray-700 dark:text-gray-300">Estimated daily: <strong>TND {defaultDailyRate.toFixed(2)}</strong></div>
           </div>
 
           {dropoffLocation && (
@@ -453,7 +530,7 @@ export default function RentPage() {
           )}
 
           <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-600">Total estimate</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Total estimate</div>
             <div className="text-xl font-bold">TND {(() => {
               if (!pickupDate || !returnDate) return '—'
               const start = new Date(pickupDate)
@@ -475,51 +552,39 @@ export default function RentPage() {
           </div>
 
           {/* Payment Method Selection */}
-          <div className="border rounded-lg p-6 bg-gray-50">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Payment Method</h3>
+          <div className="border rounded-lg p-6 bg-gray-50 dark:bg-gray-800">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Payment Method</h3>
             <div className="space-y-3">
-              <label className="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-white transition" style={{ backgroundColor: paymentMethod === 'CASH' ? '#f0fdf4' : 'white' }}>
+              <label className="flex items-center p-3 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-white dark:hover:bg-gray-700 transition" style={{ backgroundColor: paymentMethod === 'CASH' ? '#f0fdf4' : 'white' }}>
                 <input
                   type="radio"
                   name="paymentMethod"
                   value="CASH"
                   checked={paymentMethod === 'CASH'}
-                  onChange={(e) => setPaymentMethod(e.target.value as 'CASH' | 'CARD' | 'ONLINE')}
+                  onChange={(e) => setPaymentMethod(e.target.value as 'CASH' | 'CARD')}
                   className="w-4 h-4 text-green-600"
                 />
-                <span className="ml-3 text-gray-900 font-medium">💵 Cash on Pickup</span>
+                <span className="ml-3 text-gray-900 dark:text-white font-medium">💵 Cash on Pickup</span>
               </label>
 
               {userHasSavedCard ? (
-                <label className="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-white transition" style={{ backgroundColor: paymentMethod === 'CARD' ? '#f0fdf4' : 'white' }}>
+                <label className="flex items-center p-3 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-white dark:hover:bg-gray-700 transition" style={{ backgroundColor: paymentMethod === 'CARD' ? '#f0fdf4' : 'white' }}>
                   <input
                     type="radio"
                     name="paymentMethod"
                     value="CARD"
                     checked={paymentMethod === 'CARD'}
-                    onChange={(e) => setPaymentMethod(e.target.value as 'CASH' | 'CARD' | 'ONLINE')}
+                    onChange={(e) => setPaymentMethod(e.target.value as 'CASH' | 'CARD')}
                     className="w-4 h-4 text-green-600"
                   />
-                  <span className="ml-3 text-gray-900 font-medium">💳 Saved Card</span>
+                  <span className="ml-3 text-gray-900 dark:text-white font-medium">💳 Saved Card</span>
                 </label>
               ) : (
-                <div className="flex items-center p-3 border border-yellow-300 rounded-lg bg-yellow-50">
-                  <span className="text-gray-500 text-sm">💳 Saved Card</span>
-                  <span className="ml-3 text-xs text-yellow-700">Save a card in your profile to use this option</span>
+                <div className="flex items-center p-3 border border-yellow-300 dark:border-yellow-700 rounded-lg bg-yellow-50 dark:bg-yellow-900">
+                  <span className="text-gray-500 dark:text-gray-400 text-sm">💳 Saved Card</span>
+                  <span className="ml-3 text-xs text-yellow-700 dark:text-yellow-200">Save a card in your profile to use this option</span>
                 </div>
               )}
-
-              <label className="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-white transition" style={{ backgroundColor: paymentMethod === 'ONLINE' ? '#f0fdf4' : 'white' }}>
-                <input
-                  type="radio"
-                  name="paymentMethod"
-                  value="ONLINE"
-                  checked={paymentMethod === 'ONLINE'}
-                  onChange={(e) => setPaymentMethod(e.target.value as 'CASH' | 'CARD' | 'ONLINE')}
-                  className="w-4 h-4 text-green-600"
-                />
-                <span className="ml-3 text-gray-900 font-medium">🌐 Online Payment (Flouci)</span>
-              </label>
             </div>
           </div>
 

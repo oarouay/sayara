@@ -42,11 +42,13 @@ function MapClickHandler({ onChange, value }: { onChange: (loc: LocationData) =>
   useMapEvents({
     click(e: L.LeafletMouseEvent) {
       const { lat, lng } = e.latlng
-      onChange({
+      const newLocation = {
         name: `Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`,
         latitude: lat,
         longitude: lng,
-      })
+      }
+      console.log('📍 Map clicked, setting location:', newLocation)
+      onChange(newLocation)
     },
   })
   return null
@@ -59,6 +61,11 @@ export default function LocationPicker({ value, onChange, title = 'Pick Location
     setMounted(true)
   }, [])
 
+  const handleMainStoreClick = () => {
+    console.log('✅ Main Store button clicked, setting location:', MAIN_STORE)
+    onChange(MAIN_STORE)
+  }
+
   if (!mounted) return <div className="h-96 bg-gray-200 rounded animate-pulse">Loading map...</div>
 
   const defaultLat = value?.latitude || 36.8065
@@ -70,7 +77,8 @@ export default function LocationPicker({ value, onChange, title = 'Pick Location
       
       {/* Quick Select Main Store Button */}
       <button
-        onClick={() => onChange(MAIN_STORE)}
+        type="button"
+        onClick={handleMainStoreClick}
         className="w-full p-3 border-2 border-green-500 rounded-lg hover:bg-green-50 transition text-left"
       >
         <p className="font-semibold text-green-700">{MAIN_STORE.name}</p>

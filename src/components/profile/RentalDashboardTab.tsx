@@ -102,6 +102,7 @@ export default function RentalDashboardTab({ rentals: propRentals }: RentalDashb
   // Fetch rentals on mount
   useEffect(() => {
     fetchRentals()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const fetchRentals = async () => {
@@ -190,7 +191,6 @@ export default function RentalDashboardTab({ rentals: propRentals }: RentalDashb
 
   const downloadReceipt = (rental: Rental) => {
     const paymentData = rentalPayments[rental.id] || []
-    const totalPaid = paymentData.reduce((sum, p) => sum + p.amount, 0)
     
     // Calculate rental duration in days
     const rentalStart = new Date(rental.rentalDate)
@@ -906,35 +906,35 @@ export default function RentalDashboardTab({ rentals: propRentals }: RentalDashb
 
       {selectedRental && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="bg-green-600 text-white p-6 flex justify-between items-center sticky top-0 rounded-t-lg">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto transition-colors">
+            <div className="bg-green-600 dark:bg-green-900 text-white p-6 flex justify-between items-center sticky top-0 rounded-t-lg transition-colors">
               <h2 className="text-2xl font-bold">{selectedRental.carModel}</h2>
               <button
                 onClick={() => setSelectedRental(null)}
-                className="text-white hover:bg-green-700 p-2 rounded transition"
+                className="text-white hover:bg-green-700 dark:hover:bg-green-800 p-2 rounded transition"
               >
                 ✕
               </button>
             </div>
 
             <div className="p-6 space-y-6">
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h3 className="font-semibold text-gray-900 mb-3">Status</h3>
+              <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg transition-colors">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Status</h3>
                 <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(selectedRental.status)}`}>
                   {selectedRental.status}
                 </span>
               </div>
 
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h3 className="font-semibold text-gray-900 mb-3">Rental Dates</h3>
+              <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg transition-colors">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Rental Dates</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-gray-600">Pickup Date</p>
-                    <p className="font-medium">{formatDate(selectedRental.rentalDate)}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Pickup Date</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{formatDate(selectedRental.rentalDate)}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Return Date</p>
-                    <p className="font-medium">{formatDate(selectedRental.returnDate)}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Return Date</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{formatDate(selectedRental.returnDate)}</p>
                   </div>
                 </div>
               </div>

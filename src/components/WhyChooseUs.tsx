@@ -26,14 +26,14 @@ export default function WhyChooseUs() {
   ];
 
   return (
-    <section className="py-16 bg-gray-50">
+    <section className="py-16 bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-6 text-center">
         
         {/* Title */}
-        <h2 className="text-3xl md:text-4xl font-bold text-gray-800">
-          Why Choose <span className="text-green-600">Sayara</span>?
+        <h2 className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-white">
+          Why Choose <span className="text-green-600 dark:text-green-400">Sayara</span>?
         </h2>
-        <p className="mt-4 text-gray-600 max-w-2xl mx-auto">
+        <p className="mt-4 text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
           We make car hiring easy, affordable, and reliable.
         </p>
 
@@ -42,13 +42,13 @@ export default function WhyChooseUs() {
           {features.map((feature) => (
             <div
               key={feature.title}
-              className="bg-white p-8 rounded-2xl shadow-sm hover:shadow-md transition"
+              className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-sm hover:shadow-md dark:hover:shadow-lg dark:shadow-gray-900/50 transition"
             >
-              <feature.icon className="h-10 w-10 text-green-600 mx-auto" />
-              <h3 className="mt-4 font-semibold text-lg text-gray-800">
+              <feature.icon className="h-10 w-10 text-green-600 dark:text-green-400 mx-auto" />
+              <h3 className="mt-4 font-semibold text-lg text-gray-800 dark:text-white">
                 {feature.title}
               </h3>
-              <p className="mt-2 text-gray-600 text-sm">
+              <p className="mt-2 text-gray-600 dark:text-gray-400 text-sm">
                 {feature.description}
               </p>
             </div>
