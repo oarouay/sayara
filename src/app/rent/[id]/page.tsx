@@ -18,12 +18,22 @@ interface LocationData {
   longitude: number
 }
 
+interface Car {
+  id: string
+  maker: string
+  name: string
+  monthly?: number
+  price?: number
+  insuranceCost?: number
+  image?: string
+}
+
 export default function RentPage() {
   const { id } = useParams()
   const router = useRouter()
   const auth = useAuth()
 
-  const [car, setCar] = useState<any | null>(null)
+  const [car, setCar] = useState<Car | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
