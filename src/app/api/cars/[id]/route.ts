@@ -21,7 +21,6 @@ const extractIdFromUrl = (url: string) => {
 }
 
 // sanitize details values into integers or strings
-// sanitize details values and preserve numeric precision (use Number instead of rounding)
 const sanitize = (value: any): any => {
   if (value === null || value === undefined) return value;
   if (Array.isArray(value)) return value.map((v: any) => sanitize(v));
@@ -33,10 +32,10 @@ const sanitize = (value: any): any => {
   if (typeof value === 'string') {
     const s = value.trim();
     const m = s.match(/-?\d+(?:\.\d+)?/);
-    if (m) return Number(m[0]);
+    if (m) return Math.round(Number(m[0]));
     return s;
   }
-  if (typeof value === 'number') return Number(value);
+  if (typeof value === 'number') return Math.round(value);
   return value;
 };
 
@@ -52,7 +51,6 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   console.log('---- /api/cars/[id] GET START ----');
-  console.log('Request URL:', request.url);
   const cookieStore = await cookies();
   console.log('Cookies received:', cookieStore.getAll());
 
@@ -62,8 +60,6 @@ export async function GET(
     routeId = extractIdFromUrl(request.url);
     console.warn('GET /api/cars/[id] falling back to URL extraction. extracted id:', routeId, 'params:', params, 'url:', request.url);
   }
-
-  console.log('Resolved route id for GET:', routeId);
 
   if (!routeId) {
     return NextResponse.json({ error: 'Missing car id', url: request.url, params }, { status: 400 });
@@ -86,7 +82,6 @@ export async function GET(
       return NextResponse.json({ error: 'Car not found' }, { status: 404 });
     }
 
-    console.log('Fetched car for GET id:', car.id, 'name:', car.name);
     console.log('---- /api/cars/[id] GET END ----');
     return NextResponse.json(car);
   } catch (error) {
@@ -103,7 +98,6 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   console.log('---- /api/cars/[id] PUT START ----');
-  console.log('Request URL:', request.url);
   const cookieStore = await cookies();
   console.log('Cookies received for PUT:', cookieStore.getAll());
 
@@ -113,8 +107,6 @@ export async function PUT(
     routeId = extractIdFromUrl(request.url);
     console.warn('PUT /api/cars/[id] falling back to URL extraction. extracted id:', routeId, 'params:', params, 'url:', request.url);
   }
-
-  console.log('Resolved route id for PUT:', routeId);
 
   if (!routeId) {
     return NextResponse.json({ error: 'Missing car id', url: request.url, params }, { status: 400 });
@@ -136,21 +128,15 @@ export async function PUT(
     // Ensure the car exists so we can return 404 rather than a generic Prisma update error
     const existing = await prisma.car.findUnique({ where: { id: routeId } });
     if (!existing) return NextResponse.json({ error: 'Car not found' }, { status: 404 });
-    console.log('Existing car before update:', { id: existing.id, name: existing.name });
 
     const data = await request.json();
-    console.log('PUT raw data:', JSON.stringify(data));
     const { details, ...carData } = data;
-
-    console.log('PUT carData:', JSON.stringify(carData));
-    console.log('PUT details:', JSON.stringify(details));
 
     if (details !== null && details && typeof details !== 'object') {
       return NextResponse.json({ error: 'Invalid details format' }, { status: 400 });
     }
 
     const sanitizedDetails = details === null ? null : (details ? sanitizeDetails(details) : undefined);
-    console.log('Sanitized details for PUT:', JSON.stringify(sanitizedDetails));
 
     // Only allow updating explicit fields to avoid accidental writes of id/createdAt
     const updatable: any = {};
@@ -160,30 +146,19 @@ export async function PUT(
         updatable[f] = carData[f];
       }
     }
-    console.log('Updatable fields for PUT:', JSON.stringify(updatable));
-
-    // Prepare details payload similar to creation: wrap arbitrary details into keyInfo
-    let detailsPayload: any = undefined;
-    if (sanitizedDetails === null) {
-      detailsPayload = null;
-    } else if (sanitizedDetails) {
-      const hasKnown = ['keyInfo', 'stats', 'features'].some(k => Object.prototype.hasOwnProperty.call(sanitizedDetails, k));
-      detailsPayload = hasKnown ? sanitizedDetails : { keyInfo: sanitizedDetails };
-    }
-    console.log('Details payload for PUT:', JSON.stringify(detailsPayload));
 
     const updatedCar = await prisma.car.update({
       where: { id: routeId },
       data: {
         ...updatable,
-        ...(detailsPayload === null
+        ...(sanitizedDetails === null
           ? { details: { delete: true } }
-          : detailsPayload
+          : sanitizedDetails
           ? {
               details: {
                 upsert: {
-                  create: detailsPayload,
-                  update: detailsPayload,
+                  create: sanitizedDetails,
+                  update: sanitizedDetails,
                 },
               },
             }
@@ -208,7 +183,6 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   console.log('---- /api/cars/[id] DELETE START ----');
-  console.log('Request URL:', request.url);
   const cookieStore = await cookies();
   console.log('Cookies received for DELETE:', cookieStore.getAll());
 
@@ -218,8 +192,6 @@ export async function DELETE(
     routeId = extractIdFromUrl(request.url);
     console.warn('DELETE /api/cars/[id] falling back to URL extraction. extracted id:', routeId, 'params:', params, 'url:', request.url);
   }
-
-  console.log('Resolved route id for DELETE:', routeId);
 
   if (!routeId) {
     return NextResponse.json({ error: 'Missing car id', url: request.url, params }, { status: 400 });
@@ -240,7 +212,6 @@ export async function DELETE(
 
     const existing = await prisma.car.findUnique({ where: { id: routeId } });
     if (!existing) return NextResponse.json({ error: 'Car not found' }, { status: 404 });
-    console.log('Existing car before DELETE:', { id: existing.id, name: existing.name });
 
     // Delete related details first to be safe
     await prisma.carDetails.deleteMany({ where: { carId: routeId } });

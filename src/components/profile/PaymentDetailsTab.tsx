@@ -34,10 +34,10 @@ interface Payment {
 interface PaymentDetailsTabProps {
   onUpdate?: () => void;
   paymentDetails?: {
-    cardHolder?: string;
+    cardHolderName?: string;  // Changed from cardHolder
     cardNumber?: string;
     cardBrand?: string;
-    expiryDate?: string;
+    cardExpiryDate?: string;  // Changed from expiryDate
     billingAddress?: string;
   };
 }
@@ -62,16 +62,26 @@ export default function PaymentDetailsTab({ paymentDetails, onUpdate }: PaymentD
   const [successMessage, setSuccessMessage] = useState("")
   
   const [formData, setFormData] = useState({
-    cardHolder: paymentDetails?.cardHolder || "",
+    cardHolder: paymentDetails?.cardHolderName || "",
     cardNumber: paymentDetails?.cardNumber || "",
-    expiryDate: paymentDetails?.expiryDate || "",
+    expiryDate: paymentDetails?.cardExpiryDate || "",
     cvv: "",
     billingAddress: paymentDetails?.billingAddress || ""
   })
 
-
-
-
+  // Sync formData with paymentDetails prop when it changes
+  useEffect(() => {
+    if (paymentDetails) {
+      setFormData({
+        cardHolder: paymentDetails.cardHolderName || "",
+        cardNumber: paymentDetails.cardNumber || "",
+        expiryDate: paymentDetails.cardExpiryDate || "",
+        cvv: "",
+        billingAddress: paymentDetails.billingAddress || ""
+      })
+    }
+    setLoading(false)
+  }, [paymentDetails])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -122,6 +132,8 @@ export default function PaymentDetailsTab({ paymentDetails, onUpdate }: PaymentD
         })
       })
 
+      const data = await res.json()
+
       if (res.ok) {
         setSuccessMessage("Payment details updated successfully!")
         setIsEditing(false)
@@ -129,24 +141,26 @@ export default function PaymentDetailsTab({ paymentDetails, onUpdate }: PaymentD
           onUpdate()
         }
       } else {
-        setSuccessMessage("Failed to save payment details")
+        console.error('API Error:', data)
+        setSuccessMessage(`Failed to save: ${data.error || data.message || 'Unknown error'}`)
       }
     } catch (error) {
       console.error('Error saving payment:', error)
-      setSuccessMessage("Error saving payment details")
+      setSuccessMessage("Error saving payment details. Please try again.")
     }
     setTimeout(() => setSuccessMessage(""), 3000)
   }
 
   const handleCancel = () => {
     setFormData({
-      cardHolder: paymentDetails?.cardHolder || "",
+      cardHolder: paymentDetails?.cardHolderName || "",
       cardNumber: paymentDetails?.cardNumber || "",
-      expiryDate: paymentDetails?.expiryDate || "",
+      expiryDate: paymentDetails?.cardExpiryDate || "",
       cvv: "",
       billingAddress: paymentDetails?.billingAddress || ""
     })
     setIsEditing(false)
+    setSuccessMessage("")
   }
 
   const maskCardNumber = (cardNumber: string, showFull: boolean = false) => {
@@ -167,6 +181,14 @@ export default function PaymentDetailsTab({ paymentDetails, onUpdate }: PaymentD
     : (paymentDetails?.cardBrand || 'westernunion')
   const brandInfo = { brand: brandName, bgGradient: '' }
 
+  if (loading) {
+    return (
+      <div className="p-8 flex items-center justify-center">
+        <div className="text-gray-500">Loading payment details...</div>
+      </div>
+    )
+  }
+
   return (
     <div className="p-8">
       {/* Header */}
@@ -184,8 +206,12 @@ export default function PaymentDetailsTab({ paymentDetails, onUpdate }: PaymentD
 
       {/* Success Message */}
       {successMessage && (
-        <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded">
-          ✓ {successMessage}
+        <div className={`mb-4 p-4 rounded ${
+          successMessage.includes('successfully') 
+            ? 'bg-green-50 border border-green-200 text-green-700' 
+            : 'bg-red-50 border border-red-200 text-red-700'
+        }`}>
+          {successMessage.includes('successfully') ? '✓' : '✗'} {successMessage}
         </div>
       )}
 
@@ -207,7 +233,7 @@ export default function PaymentDetailsTab({ paymentDetails, onUpdate }: PaymentD
             />
           ) : (
             <p className="text-gray-900 font-medium">
-              {paymentDetails?.cardHolder || "Not set"}
+              {paymentDetails?.cardHolderName || "Not set"}
             </p>
           )}
         </div>
@@ -251,7 +277,7 @@ export default function PaymentDetailsTab({ paymentDetails, onUpdate }: PaymentD
             />
           ) : (
             <p className="text-gray-900 font-medium">
-              {paymentDetails?.expiryDate && paymentDetails.expiryDate.trim() ? paymentDetails.expiryDate : "Not set"}
+              {paymentDetails?.cardExpiryDate && paymentDetails.cardExpiryDate.trim() ? paymentDetails.cardExpiryDate : "Not set"}
             </p>
           )}
         </div>
@@ -329,13 +355,13 @@ export default function PaymentDetailsTab({ paymentDetails, onUpdate }: PaymentD
               <div>
                 <p className="text-xs opacity-70 mb-1 tracking-wide">CARD HOLDER</p>
                 <p className="text-sm font-semibold uppercase">
-                  {paymentDetails.cardHolder || "N/A"}
+                  {paymentDetails.cardHolderName || "N/A"}
                 </p>
               </div>
               <div>
                 <p className="text-xs opacity-70 mb-1 tracking-wide">EXPIRES</p>
                 <p className="text-sm font-semibold">
-                  {paymentDetails.expiryDate && paymentDetails.expiryDate.trim() ? paymentDetails.expiryDate : "N/A"}
+                  {paymentDetails.cardExpiryDate && paymentDetails.cardExpiryDate.trim() ? paymentDetails.cardExpiryDate : "N/A"}
                 </p>
               </div>
             </div>
@@ -348,7 +374,7 @@ export default function PaymentDetailsTab({ paymentDetails, onUpdate }: PaymentD
               <div className="space-y-3">
                 <div>
                   <p className="text-xs text-gray-600 mb-1">Card Holder</p>
-                  <p className="text-sm font-mono text-gray-900">{paymentDetails.cardHolder || "Not set"}</p>
+                  <p className="text-sm font-mono text-gray-900">{paymentDetails.cardHolderName || "Not set"}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-600 mb-1">Full Card Number</p>
@@ -360,7 +386,7 @@ export default function PaymentDetailsTab({ paymentDetails, onUpdate }: PaymentD
                 </div>
                 <div>
                   <p className="text-xs text-gray-600 mb-1">Expiry Date</p>
-                  <p className="text-sm font-mono text-gray-900">{paymentDetails.expiryDate || "Not set"}</p>
+                  <p className="text-sm font-mono text-gray-900">{paymentDetails.cardExpiryDate || "Not set"}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-600 mb-1">Billing Address</p>

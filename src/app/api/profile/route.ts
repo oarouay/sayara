@@ -109,29 +109,29 @@ export async function PUT(request: Request) {
       idDocumentContent,
     } = body
 
-    // If payment method is being updated, just update user fields (don't create payment record)
-    // Payment records are created when a rental is actually paid for
+    // Build update data object - check if field exists in body, not if it's truthy
+    const updateData: any = {}
+    
+    if (name !== undefined) updateData.name = name
+    if (email !== undefined) updateData.email = email
+    if (phone !== undefined) updateData.phone = phone
+    if (address !== undefined) updateData.address = address
+    if (nationality !== undefined) updateData.nationality = nationality
+    if (dateOfBirth !== undefined) updateData.dateOfBirth = new Date(dateOfBirth)
+    if (driverLicenseNumber !== undefined) updateData.driverLicenseNumber = driverLicenseNumber
+    if (driverLicenseDocument !== undefined) updateData.driverLicenseDocument = driverLicenseDocument
+    if (idDocumentNumber !== undefined) updateData.idDocumentNumber = idDocumentNumber
+    if (idDocumentContent !== undefined) updateData.idDocumentContent = idDocumentContent
+    if (paymentMethod !== undefined) updateData.paymentMethod = paymentMethod
+    if (cardHolderName !== undefined) updateData.cardHolderName = cardHolderName
+    if (cardNumber !== undefined) updateData.cardNumber = cardNumber
+    if (cardExpiryDate !== undefined) updateData.cardExpiryDate = cardExpiryDate
+    if (cardBrand !== undefined) updateData.cardBrand = cardBrand
+    if (billingAddress !== undefined) updateData.billingAddress = billingAddress
 
     const user = await prisma.user.update({
       where: { id: authUser.id },
-      data: {
-        ...(name && { name }),
-        ...(email && { email }),
-        ...(phone && { phone }),
-        ...(address && { address }),
-        ...(nationality && { nationality }),
-        ...(dateOfBirth && { dateOfBirth: new Date(dateOfBirth) }),
-        ...(driverLicenseNumber && { driverLicenseNumber }),
-        ...(driverLicenseDocument && { driverLicenseDocument }),
-        ...(idDocumentNumber && { idDocumentNumber }),
-        ...(idDocumentContent && { idDocumentContent }),
-        ...(paymentMethod && { paymentMethod }),
-        ...(cardHolderName && { cardHolderName }),
-        ...(cardNumber && { cardNumber }),
-        ...(cardExpiryDate && { cardExpiryDate }),
-        ...(cardBrand && { cardBrand }),
-        ...(billingAddress && { billingAddress }),
-      },
+      data: updateData,
       select: {
         id: true,
         name: true,

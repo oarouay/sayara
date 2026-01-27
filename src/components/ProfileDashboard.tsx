@@ -144,10 +144,10 @@ export default function ProfileDashboard() {
           {activeTab === "payment" && (
             <PaymentDetailsTab
               paymentDetails={{
-                cardHolder: user.cardHolderName ?? "",
-                cardNumber: user.cardLastFour ?? "",
+                cardHolderName: user.cardHolderName ?? "",
+                cardNumber: user.cardNumber ?? "",
                 cardBrand: user.cardBrand ?? "",
-                expiryDate: user.expiryDate ?? "",
+                cardExpiryDate: user.cardExpiryDate ?? "",
                 billingAddress: user.billingAddress ?? "",
               }}
               onUpdate={fetchProfile}
